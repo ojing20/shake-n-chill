@@ -181,6 +181,9 @@ auth.onAuthStateChanged(async user => {
   $('app-loading').style.display = 'none';
   if ($('app-wrapper')) $('app-wrapper').style.display = 'block';
 
+  // Re-attach all event listeners now that DOM is visible
+  initAppListeners();
+
   // Set dashboard date
   $('dashboard-date').textContent = new Date().toLocaleDateString('en-PH',
     { weekday:'long', year:'numeric', month:'long', day:'numeric' });
@@ -1432,7 +1435,11 @@ function doGlobalSearch(query) {
 // ──────────────────────────────────────────────────────────────
 //  13.  EVENT LISTENERS
 // ──────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+let listenersInitialized = false;
+
+function initAppListeners() {
+  if (listenersInitialized) return;
+  listenersInitialized = true;
 
   /* ── Navigation ── */
   document.querySelectorAll('.nav-item[data-page]').forEach(btn => {
