@@ -129,14 +129,7 @@ function closeSidebar() { $('sidebar').classList.remove('open'); $('sidebar-over
 //  1.  AUTH & BOOT
 // ──────────────────────────────────────────────────────────────
 auth.onAuthStateChanged(async user => {
-  if (!user) {
-    try {
-      window.location.replace('index.html');
-    } catch(e) {
-      window.location.href = 'index.html';
-    }
-    return;
-  }
+  if (!user) return; // handled by index.html auth screen
 
   state.user = user;
 
@@ -185,9 +178,9 @@ auth.onAuthStateChanged(async user => {
   // Start real-time listeners
   startListeners();
 
-  // Show app
+  // Show app (already shown by index.html auth handler)
   $('app-loading').style.display = 'none';
-  $('app-wrapper').style.display = 'block';
+  if ($('app-wrapper')) $('app-wrapper').style.display = 'block';
 
   // Set dashboard date
   $('dashboard-date').textContent = new Date().toLocaleDateString('en-PH',
@@ -1455,11 +1448,7 @@ document.addEventListener('DOMContentLoaded', () => {
   $('btn-logout')?.addEventListener('click', async () => {
     stopListeners();
     await auth.signOut();
-    try {
-      window.location.replace('index.html');
-    } catch(e) {
-      window.location.href = 'index.html';
-    }
+    if (typeof showLogin === 'function') showLogin();
   });
 
   /* ── Global search ── */

@@ -4,1050 +4,498 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#0ea5e9" />
-  <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;">
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <title>Shake 'n Chill – Login</title>
+  <title>Shake 'n Chill</title>
   <link rel="manifest" href="manifest.json" />
-  <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <!-- EmailJS – sends OTP to user's email -->
+  <link rel="stylesheet" href="css/app.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" />
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-        crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <!-- Firebase SDKs -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
   <style>
-    /* ══════════════════════════════════════════
-       Shake 'n Chill – Login Page Styles
-       ══════════════════════════════════════════ */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --teal:        #0ea5e9;
-      --teal-dark:   #0284c7;
-      --teal-light:  #e0f2fe;
-      --amber:       #f59e0b;
-      --amber-dark:  #d97706;
-      --danger:      #ef4444;
-      --success:     #22c55e;
-      --text:        #0f172a;
-      --muted:       #64748b;
-      --border:      #e2e8f0;
-      --card:        #ffffff;
-      --radius:      16px;
-    }
-
-    body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-      background: linear-gradient(160deg, #0c4a6e 0%, #0ea5e9 45%, #7dd3fc 100%);
-      position: relative;
-      overflow: hidden;
-    }
-
-    /* floating ice crystals background */
-    body::before {
-      content: '❄ ❄ ❄ ❄ ❄ ❄ ❄ ❄ ❄ ❄ ❄ ❄';
-      position: fixed;
-      inset: 0;
-      font-size: 1.5rem;
-      color: rgba(255,255,255,.12);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      word-spacing: 3rem;
-      letter-spacing: 3rem;
-      line-height: 4rem;
-      pointer-events: none;
-      white-space: normal;
-      word-break: break-all;
-    }
-
-    /* ── Card ── */
-    .auth-card {
-      background: var(--card);
-      border-radius: var(--radius);
-      box-shadow: 0 20px 60px rgba(0,0,0,.25);
-      width: 100%;
-      max-width: 420px;
-      padding: 2.25rem 2rem 2rem;
-      position: relative;
-      z-index: 1;
-      animation: popIn .45s cubic-bezier(.175,.885,.32,1.275);
-    }
-
-    @keyframes popIn {
-      from { opacity:0; transform:scale(.88) translateY(20px); }
-      to   { opacity:1; transform:scale(1)  translateY(0); }
-    }
-
-    /* ── Brand ── */
-    .auth-brand {
-      text-align: center;
-      margin-bottom: 1.75rem;
-    }
-
-    .logo-wrap {
-      width: 110px;
-      height: 110px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #e0f2fe, #bae6fd);
-      border: 3px solid var(--teal);
-      overflow: hidden;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: .75rem;
-      box-shadow: 0 4px 20px rgba(14,165,233,.3);
-    }
-
-    .logo-wrap img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 50%;
-    }
-
-    /* Fallback text logo when no image */
-    .logo-fallback {
-      font-size: 2.25rem;
-      line-height: 1;
-    }
-
-    .auth-brand h1 {
-      font-size: 1.5rem;
-      font-weight: 800;
-      color: var(--text);
-      letter-spacing: -.01em;
-    }
-
-    .auth-brand h1 span { color: var(--teal); }
-
-    .auth-brand p {
-      font-size: .8125rem;
-      color: var(--muted);
-      margin-top: .2rem;
-    }
-
-    /* ── Step indicator ── */
-    .step-indicator {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0;
-      margin-bottom: 1.5rem;
-    }
-
-    .step-dot {
-      width: 28px; height: 28px;
-      border-radius: 50%;
-      border: 2px solid var(--border);
-      background: var(--card);
-      display: flex; align-items: center; justify-content: center;
-      font-size: .75rem;
-      font-weight: 700;
-      color: var(--muted);
-      transition: all .3s;
-      position: relative;
-      z-index: 1;
-    }
-
-    .step-dot.active {
-      border-color: var(--teal);
-      background: var(--teal);
-      color: #fff;
-    }
-
-    .step-dot.done {
-      border-color: var(--success);
-      background: var(--success);
-      color: #fff;
-    }
-
-    .step-line {
-      width: 48px;
-      height: 2px;
-      background: var(--border);
-      transition: background .3s;
-    }
-
-    .step-line.done { background: var(--success); }
-
-    /* ── Alert ── */
-    .alert {
-      display: none;
-      padding: .7rem 1rem;
-      border-radius: 8px;
-      font-size: .84rem;
-      margin-bottom: 1rem;
-      font-weight: 500;
-      align-items: center;
-      gap: .5rem;
-    }
-
-    .alert.error   { background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; display:flex; }
-    .alert.success { background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; display:flex; }
-    .alert.info    { background:#e0f2fe; color:#075985; border:1px solid #bae6fd; display:flex; }
-
-    /* ── Form ── */
-    .panel { display: none; }
-    .panel.active { display: block; }
-
-    .panel-title {
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: .25rem;
-    }
-
-    .panel-sub {
-      font-size: .8125rem;
-      color: var(--muted);
-      margin-bottom: 1.25rem;
-      line-height: 1.5;
-    }
-
-    .panel-sub strong { color: var(--teal); }
-
-    .form-group { margin-bottom: 1.125rem; }
-
-    .form-group label {
-      display: block;
-      font-size: .8rem;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: .375rem;
-      text-transform: uppercase;
-      letter-spacing: .04em;
-    }
-
-    .input-wrap { position: relative; }
-
-    .input-wrap .icon {
-      position: absolute;
-      left: .875rem;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--muted);
-      font-size: .95rem;
-      pointer-events: none;
-    }
-
-    .input-wrap input {
-      width: 100%;
-      padding: .75rem .875rem .75rem 2.5rem;
-      border: 1.5px solid var(--border);
-      border-radius: 8px;
-      font-size: .9375rem;
-      color: var(--text);
-      background: #f8fafc;
-      outline: none;
-      transition: border-color .2s, box-shadow .2s;
-      font-family: inherit;
-    }
-
-    .input-wrap input:focus {
-      border-color: var(--teal);
-      background: #fff;
-      box-shadow: 0 0 0 3px rgba(14,165,233,.15);
-    }
-
-    .toggle-pw {
-      position: absolute;
-      right: .875rem;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: var(--muted);
-      font-size: .9rem;
-      padding: 0;
-    }
-
-    /* ── OTP boxes ── */
-    .otp-wrap {
-      display: flex;
-      gap: .625rem;
-      justify-content: center;
-      margin: .5rem 0 1.25rem;
-    }
-
-    .otp-box {
-      width: 50px; height: 58px;
-      border: 2px solid var(--border);
-      border-radius: 10px;
-      text-align: center;
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--text);
-      background: #f8fafc;
-      outline: none;
-      transition: border-color .2s, box-shadow .2s;
-      caret-color: var(--teal);
-    }
-
-    .otp-box:focus {
-      border-color: var(--teal);
-      background: #fff;
-      box-shadow: 0 0 0 3px rgba(14,165,233,.15);
-    }
-
-    .otp-box.filled { border-color: var(--teal); background: var(--teal-light); }
-
-    /* ── Timer ── */
-    .otp-timer {
-      text-align: center;
-      font-size: .8125rem;
-      color: var(--muted);
-      margin-bottom: 1.25rem;
-    }
-
-    .otp-timer span { font-weight: 700; color: var(--teal); }
-    .otp-timer .resend-link { color: var(--teal); cursor: pointer; font-weight: 600; text-decoration: underline; }
-
-    /* ── Form footer ── */
-    .form-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1.375rem;
-      font-size: .8125rem;
-    }
-
-    .form-footer label {
-      display: flex; align-items: center; gap: .4rem;
-      color: var(--muted); cursor: pointer;
-    }
-
-    .form-footer a { color: var(--teal); font-weight: 600; text-decoration: none; }
-    .form-footer a:hover { text-decoration: underline; }
-
-    /* ── Buttons ── */
-    .btn-primary {
-      width: 100%;
-      padding: .8125rem;
-      background: linear-gradient(135deg, var(--teal), var(--teal-dark));
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: opacity .2s, transform .1s;
-      letter-spacing: .02em;
-      font-family: inherit;
-    }
-
-    .btn-primary:hover  { opacity: .9; }
-    .btn-primary:active { transform: scale(.98); }
-    .btn-primary:disabled { opacity: .55; cursor: not-allowed; }
-
-    /* amber accent for OTP verify */
-    .btn-amber {
-      background: linear-gradient(135deg, var(--amber), var(--amber-dark));
-    }
-
-    .back-link {
-      display: inline-flex; align-items: center; gap: .35rem;
-      color: var(--teal); font-size: .875rem; font-weight: 600;
-      cursor: pointer; background: none; border: none; padding: 0;
-      margin-bottom: 1rem; font-family: inherit;
-    }
-
-    .back-link:hover { text-decoration: underline; }
-
-    /* ── Spinner ── */
-    .spinner {
-      display: inline-block;
-      width: 16px; height: 16px;
-      border: 2px solid rgba(255,255,255,.35);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin .6s linear infinite;
-      margin-right: .4rem;
-      vertical-align: middle;
-    }
-
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ── Security badge ── */
-    .security-badge {
-      display: flex;
-      align-items: center;
-      gap: .5rem;
-      background: #f0fdf4;
-      border: 1px solid #bbf7d0;
-      border-radius: 8px;
-      padding: .625rem .875rem;
-      font-size: .78rem;
-      color: #15803d;
-      font-weight: 600;
-      margin-bottom: 1.25rem;
-    }
-
-    /* ── Footer ── */
-    .auth-note {
-      text-align: center;
-      font-size: .72rem;
-      color: var(--muted);
-      margin-top: 1.5rem;
-    }
-
-    /* ── Success animation ── */
-    .success-panel {
-      text-align: center;
-      padding: 1rem 0;
-    }
-
-    .success-icon {
-      font-size: 3.5rem;
-      margin-bottom: .75rem;
-      animation: bounceIn .5s ease;
-    }
-
-    @keyframes bounceIn {
-      0%   { transform: scale(0); }
-      70%  { transform: scale(1.15); }
-      100% { transform: scale(1); }
-    }
-
-    /* ── Responsive ── */
-    @media (max-width: 480px) {
-      .auth-card { padding: 1.75rem 1.25rem 1.5rem; }
-      .otp-box   { width: 42px; height: 50px; font-size: 1.25rem; }
-      .step-line { width: 32px; }
-    }
+  /* ── LOGIN PAGE STYLES ── */
+  .auth-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: linear-gradient(160deg, #0c4a6e 0%, #0ea5e9 45%, #7dd3fc 100%);
+  }
+  .auth-card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    width: 100%;
+    max-width: 420px;
+    padding: 2.25rem 2rem 2rem;
+    animation: popIn .45s cubic-bezier(.175,.885,.32,1.275);
+  }
+  @keyframes popIn { from{opacity:0;transform:scale(.88) translateY(20px)} to{opacity:1;transform:scale(1) translateY(0)} }
+  .auth-brand { text-align:center; margin-bottom:1.75rem; }
+  .logo-wrap { width:110px;height:110px;border-radius:50%;background:linear-gradient(135deg,#e0f2fe,#bae6fd);border:3px solid #0ea5e9;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;margin-bottom:.75rem;box-shadow:0 4px 20px rgba(14,165,233,.3); }
+  .logo-wrap img { width:100%;height:100%;object-fit:cover;border-radius:50%; }
+  .auth-brand h1 { font-size:1.5rem;font-weight:800;color:#0f172a; }
+  .auth-brand h1 span { color:#0ea5e9; }
+  .auth-brand p { font-size:.8125rem;color:#64748b;margin-top:.2rem; }
+  .step-indicator { display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:1.5rem; }
+  .step-dot { width:28px;height:28px;border-radius:50%;border:2px solid #e2e8f0;background:#fff;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:#64748b;transition:all .3s;position:relative;z-index:1; }
+  .step-dot.active { border-color:#0ea5e9;background:#0ea5e9;color:#fff; }
+  .step-dot.done { border-color:#22c55e;background:#22c55e;color:#fff; }
+  .step-line { width:48px;height:2px;background:#e2e8f0;transition:background .3s; }
+  .step-line.done { background:#22c55e; }
+  .auth-alert { display:none;padding:.7rem 1rem;border-radius:8px;font-size:.84rem;margin-bottom:1rem;font-weight:500;align-items:center;gap:.5rem; }
+  .auth-alert.error { background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;display:flex; }
+  .auth-alert.success { background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;display:flex; }
+  .auth-alert.info { background:#e0f2fe;color:#075985;border:1px solid #bae6fd;display:flex; }
+  .auth-panel { display:none; }
+  .auth-panel.active { display:block; }
+  .panel-title { font-size:1rem;font-weight:700;color:#0f172a;margin-bottom:.25rem; }
+  .panel-sub { font-size:.8125rem;color:#64748b;margin-bottom:1.25rem;line-height:1.5; }
+  .auth-form-group { margin-bottom:1.125rem; }
+  .auth-form-group label { display:block;font-size:.8rem;font-weight:700;color:#0f172a;margin-bottom:.375rem;text-transform:uppercase;letter-spacing:.04em; }
+  .input-wrap { position:relative; }
+  .input-wrap .icon { position:absolute;left:.875rem;top:50%;transform:translateY(-50%);color:#64748b;font-size:.95rem;pointer-events:none; }
+  .input-wrap input { width:100%;padding:.75rem .875rem .75rem 2.5rem;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.9375rem;color:#0f172a;background:#f8fafc;outline:none;transition:border-color .2s,box-shadow .2s;font-family:inherit; }
+  .input-wrap input:focus { border-color:#0ea5e9;background:#fff;box-shadow:0 0 0 3px rgba(14,165,233,.15); }
+  .toggle-pw { position:absolute;right:.875rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#64748b;font-size:.9rem;padding:0; }
+  .otp-wrap { display:flex;gap:.625rem;justify-content:center;margin:.5rem 0 1.25rem; }
+  .otp-box { width:50px;height:58px;border:2px solid #e2e8f0;border-radius:10px;text-align:center;font-size:1.5rem;font-weight:700;color:#0f172a;background:#f8fafc;outline:none;transition:border-color .2s,box-shadow .2s; }
+  .otp-box:focus { border-color:#0ea5e9;background:#fff;box-shadow:0 0 0 3px rgba(14,165,233,.15); }
+  .otp-box.filled { border-color:#0ea5e9;background:#e0f2fe; }
+  .otp-timer { text-align:center;font-size:.8125rem;color:#64748b;margin-bottom:1.25rem; }
+  .otp-timer span { font-weight:700;color:#0ea5e9; }
+  .resend-link { color:#0ea5e9;cursor:pointer;font-weight:600;text-decoration:underline; }
+  .auth-footer-row { display:flex;align-items:center;justify-content:space-between;margin-bottom:1.375rem;font-size:.8125rem; }
+  .auth-footer-row label { display:flex;align-items:center;gap:.4rem;color:#64748b;cursor:pointer; }
+  .auth-footer-row a { color:#0ea5e9;font-weight:600;text-decoration:none; }
+  .auth-btn { width:100%;padding:.8125rem;background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;border:none;border-radius:8px;font-size:1rem;font-weight:700;cursor:pointer;transition:opacity .2s;font-family:inherit; }
+  .auth-btn:hover { opacity:.9; }
+  .auth-btn:disabled { opacity:.55;cursor:not-allowed; }
+  .auth-btn.amber { background:linear-gradient(135deg,#f59e0b,#d97706); }
+  .back-link { display:inline-flex;align-items:center;gap:.35rem;color:#0ea5e9;font-size:.875rem;font-weight:600;cursor:pointer;background:none;border:none;padding:0;margin-bottom:1rem;font-family:inherit; }
+  .spinner { display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;margin-right:.4rem;vertical-align:middle; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .security-badge { display:flex;align-items:center;gap:.5rem;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:.625rem .875rem;font-size:.78rem;color:#15803d;font-weight:600;margin-bottom:1.25rem; }
+  .auth-note { text-align:center;font-size:.72rem;color:#64748b;margin-top:1.5rem; }
+  .success-panel { text-align:center;padding:1rem 0; }
+  .success-icon { font-size:3.5rem;margin-bottom:.75rem;animation:bounceIn .5s ease; }
+  @keyframes bounceIn { 0%{transform:scale(0)} 70%{transform:scale(1.15)} 100%{transform:scale(1)} }
+  @media(max-width:480px){ .auth-card{padding:1.75rem 1.25rem 1.5rem} .otp-box{width:42px;height:50px;font-size:1.25rem} .step-line{width:32px} }
   </style>
 </head>
 <body>
 
-<div class="auth-card">
-
-  <!-- ── Brand ── -->
-  <div class="auth-brand">
-    <div class="logo-wrap">
-      <!-- Logo image – place your logo at images/logo.png -->
-      <img src="images/logo.png" alt="Shake 'n Chill Logo"
-           onerror="this.style.display='none';this.nextElementSibling.style.display='block';" />
-      <span class="logo-fallback" style="display:none;">🧋</span>
-    </div>
-    <h1>Shake <span>'n</span> Chill</h1>
-    <p>Inventory Management System</p>
-  </div>
-
-  <!-- ── Step indicator ── -->
-  <div class="step-indicator" id="step-indicator">
-    <div class="step-dot active" id="step1-dot">1</div>
-    <div class="step-line"       id="line1"></div>
-    <div class="step-dot"        id="step2-dot">2</div>
-    <div class="step-line"       id="line2"></div>
-    <div class="step-dot"        id="step3-dot"><i class="fa fa-check" style="font-size:.6rem;"></i></div>
-  </div>
-
-  <!-- ── Alert box ── -->
-  <div class="alert" id="alert" role="alert"></div>
-
-  <!-- ══════════════════════════════════════════
-       STEP 1 – EMAIL & PASSWORD
-       ══════════════════════════════════════════ -->
-  <div class="panel active" id="panel-login">
-    <div class="panel-title">Sign In</div>
-    <div class="panel-sub">Enter your credentials. An OTP will be sent to your email.</div>
-
-    <div class="security-badge">
-      <i class="fa fa-shield-halved"></i>
-      OTP verification required on every login
-    </div>
-
-    <form id="login-form" novalidate autocomplete="on">
-      <div class="form-group">
-        <label for="email">Email Address</label>
-        <div class="input-wrap">
-          <span class="icon"><i class="fa fa-envelope"></i></span>
-          <input type="email" id="email" name="email"
-                 placeholder="you@example.com"
-                 autocomplete="email" required />
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="password">Password</label>
-        <div class="input-wrap">
-          <span class="icon"><i class="fa fa-lock"></i></span>
-          <input type="password" id="password" name="password"
-                 placeholder="••••••••"
-                 autocomplete="current-password" required />
-          <button type="button" class="toggle-pw" id="toggle-pw"
-                  aria-label="Toggle password visibility">
-            <i class="fa fa-eye" id="pw-eye"></i>
-          </button>
-        </div>
-      </div>
-
-      <div class="form-footer">
-        <label>
-          <input type="checkbox" id="remember" />
-          Remember me
-        </label>
-        <a href="#" id="forgot-link">Forgot password?</a>
-      </div>
-
-      <button type="submit" class="btn-primary" id="login-btn">
-        <i class="fa fa-arrow-right"></i> Continue
-      </button>
-    </form>
-  </div>
-
-  <!-- ══════════════════════════════════════════
-       STEP 1b – FORGOT PASSWORD
-       ══════════════════════════════════════════ -->
-  <div class="panel" id="panel-forgot">
-    <button class="back-link" id="back-from-forgot">
-      <i class="fa fa-arrow-left"></i> Back to login
-    </button>
-    <div class="panel-title">Reset Password</div>
-    <div class="panel-sub">Enter your email and we'll send a password reset link.</div>
-
-    <form id="forgot-form" novalidate>
-      <div class="form-group">
-        <label for="reset-email">Email Address</label>
-        <div class="input-wrap">
-          <span class="icon"><i class="fa fa-envelope"></i></span>
-          <input type="email" id="reset-email" placeholder="you@example.com" required />
-        </div>
-      </div>
-      <button type="submit" class="btn-primary" id="reset-btn">
-        Send Reset Link
-      </button>
-    </form>
-  </div>
-
-  <!-- ══════════════════════════════════════════
-       STEP 2 – OTP VERIFICATION
-       ══════════════════════════════════════════ -->
-  <div class="panel" id="panel-otp">
-    <button class="back-link" id="back-from-otp">
-      <i class="fa fa-arrow-left"></i> Back
-    </button>
-    <div class="panel-title">Verify Your Identity</div>
-    <div class="panel-sub" id="otp-sub-text">
-      A 6-digit code was sent to <strong id="otp-email-display"></strong>.<br>
-      <small style="color:#64748b;">Check your inbox (and spam folder).</small>
-    </div>
-
-    <div class="otp-wrap" role="group" aria-label="One-time password input">
-      <input class="otp-box" type="text" inputmode="numeric" maxlength="1" id="otp0" aria-label="Digit 1" />
-      <input class="otp-box" type="text" inputmode="numeric" maxlength="1" id="otp1" aria-label="Digit 2" />
-      <input class="otp-box" type="text" inputmode="numeric" maxlength="1" id="otp2" aria-label="Digit 3" />
-      <input class="otp-box" type="text" inputmode="numeric" maxlength="1" id="otp3" aria-label="Digit 4" />
-      <input class="otp-box" type="text" inputmode="numeric" maxlength="1" id="otp4" aria-label="Digit 5" />
-      <input class="otp-box" type="text" inputmode="numeric" maxlength="1" id="otp5" aria-label="Digit 6" />
-    </div>
-
-    <div class="otp-timer" id="otp-timer">
-      Code expires in <span id="otp-countdown">05:00</span>
-    </div>
-
-    <div class="otp-timer" id="otp-resend-row" style="display:none;">
-      Didn't receive a code?
-      <span class="resend-link" id="resend-link">Resend OTP</span>
-    </div>
-
-    <button class="btn-primary btn-amber" id="btn-verify-otp">
-      <i class="fa fa-shield-halved"></i> Verify & Sign In
-    </button>
-  </div>
-
-  <!-- ══════════════════════════════════════════
-       STEP 3 – SUCCESS
-       ══════════════════════════════════════════ -->
-  <div class="panel" id="panel-success">
-    <div class="success-panel">
-      <div class="success-icon">✅</div>
-      <div class="panel-title" style="font-size:1.125rem;">Verified!</div>
-      <div class="panel-sub" style="margin-top:.35rem;">
-        Identity confirmed. Redirecting to your dashboard…
-      </div>
-      <div style="margin-top:1.25rem;">
-        <span class="spinner" style="border-color:rgba(14,165,233,.3);border-top-color:var(--teal);width:24px;height:24px;"></span>
-      </div>
-    </div>
-  </div>
-
-  <p class="auth-note">© 2026 Shake 'n Chill &mdash; Secured with OTP</p>
+<!-- ══ LOADING SCREEN ══ -->
+<div id="app-loading">
+  <img src="images/logo.png" alt="Shake 'n Chill" class="logo-img" onerror="this.style.display='none';" />
+  <div class="spin"></div>
+  <span>Loading Shake 'n Chill…</span>
 </div>
 
-<!-- Firebase config -->
-<script src="firebase-config.js"></script>
+<!-- ══ AUTH SCREEN ══ -->
+<div id="auth-screen" class="auth-screen" style="display:none;">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="logo-wrap">
+        <img src="images/logo.png" alt="Shake 'n Chill" onerror="this.style.display='none';this.nextElementSibling.style.display='block';" />
+        <span style="display:none;font-size:2.25rem;">🧋</span>
+      </div>
+      <h1>Shake <span>'n</span> Chill</h1>
+      <p>Inventory Management System</p>
+    </div>
 
+    <div class="step-indicator">
+      <div class="step-dot active" id="step1-dot">1</div>
+      <div class="step-line" id="line1"></div>
+      <div class="step-dot" id="step2-dot">2</div>
+      <div class="step-line" id="line2"></div>
+      <div class="step-dot" id="step3-dot"><i class="fa fa-check" style="font-size:.6rem;"></i></div>
+    </div>
+
+    <div class="auth-alert" id="auth-alert" role="alert"></div>
+
+    <!-- Step 1 — Login -->
+    <div class="auth-panel active" id="panel-login">
+      <div class="panel-title">Sign In</div>
+      <div class="panel-sub">Enter your credentials. An OTP will be sent to your email.</div>
+      <div class="security-badge"><i class="fa fa-shield-halved"></i> OTP verification required on every login</div>
+      <form id="login-form" novalidate autocomplete="on">
+        <div class="auth-form-group">
+          <label>Email Address</label>
+          <div class="input-wrap">
+            <span class="icon"><i class="fa fa-envelope"></i></span>
+            <input type="email" id="email" placeholder="you@example.com" autocomplete="email" required />
+          </div>
+        </div>
+        <div class="auth-form-group">
+          <label>Password</label>
+          <div class="input-wrap">
+            <span class="icon"><i class="fa fa-lock"></i></span>
+            <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" required />
+            <button type="button" class="toggle-pw" id="toggle-pw"><i class="fa fa-eye" id="pw-eye"></i></button>
+          </div>
+        </div>
+        <div class="auth-footer-row">
+          <label><input type="checkbox" id="remember" /> Remember me</label>
+          <a href="#" id="forgot-link">Forgot password?</a>
+        </div>
+        <button type="submit" class="auth-btn" id="login-btn"><i class="fa fa-arrow-right"></i> Continue</button>
+      </form>
+    </div>
+
+    <!-- Step 1b — Forgot -->
+    <div class="auth-panel" id="panel-forgot">
+      <button class="back-link" id="back-from-forgot"><i class="fa fa-arrow-left"></i> Back</button>
+      <div class="panel-title">Reset Password</div>
+      <div class="panel-sub">Enter your email to receive a reset link.</div>
+      <form id="forgot-form" novalidate>
+        <div class="auth-form-group">
+          <label>Email Address</label>
+          <div class="input-wrap">
+            <span class="icon"><i class="fa fa-envelope"></i></span>
+            <input type="email" id="reset-email" placeholder="you@example.com" required />
+          </div>
+        </div>
+        <button type="submit" class="auth-btn" id="reset-btn">Send Reset Link</button>
+      </form>
+    </div>
+
+    <!-- Step 2 — OTP -->
+    <div class="auth-panel" id="panel-otp">
+      <button class="back-link" id="back-from-otp"><i class="fa fa-arrow-left"></i> Back</button>
+      <div class="panel-title">Verify Your Identity</div>
+      <div class="panel-sub">Code sent to <strong id="otp-email-display"></strong>.<br><small>Check inbox and spam folder.</small></div>
+      <div class="otp-wrap">
+        <input class="otp-box" type="text" inputmode="numeric" maxlength="1" id="otp0" />
+        <input class="otp-box" type="text" inputmode="numeric" maxlength="1" id="otp1" />
+        <input class="otp-box" type="text" inputmode="numeric" maxlength="1" id="otp2" />
+        <input class="otp-box" type="text" inputmode="numeric" maxlength="1" id="otp3" />
+        <input class="otp-box" type="text" inputmode="numeric" maxlength="1" id="otp4" />
+        <input class="otp-box" type="text" inputmode="numeric" maxlength="1" id="otp5" />
+      </div>
+      <div class="otp-timer" id="otp-timer">Expires in <span id="otp-countdown">05:00</span></div>
+      <div class="otp-timer" id="otp-resend-row" style="display:none;">Didn't get a code? <span class="resend-link" id="resend-link">Resend OTP</span></div>
+      <button class="auth-btn amber" id="btn-verify-otp"><i class="fa fa-shield-halved"></i> Verify & Sign In</button>
+    </div>
+
+    <!-- Step 3 — Success -->
+    <div class="auth-panel" id="panel-success">
+      <div class="success-panel">
+        <div class="success-icon">✅</div>
+        <div class="panel-title" style="font-size:1.125rem;">Verified!</div>
+        <div class="panel-sub" style="margin-top:.35rem;">Loading your dashboard…</div>
+        <div style="margin-top:1.25rem;"><span class="spinner" style="border-color:rgba(14,165,233,.3);border-top-color:#0ea5e9;width:24px;height:24px;"></span></div>
+      </div>
+    </div>
+
+    <p class="auth-note">© 2026 Shake 'n Chill — Secured with OTP</p>
+  </div>
+</div>
+
+<!-- ══ MAIN APP (hidden until logged in) ══ -->
+<div id="app-wrapper">
+  <!-- Sidebar overlay -->
+  <div id="sidebar-overlay"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon" style="background:none;padding:0;border-radius:50%;overflow:hidden;border:2px solid rgba(255,255,255,.2);">
+        <img src="images/logo.png" alt="Shake 'n Chill" style="width:40px;height:40px;object-fit:cover;border-radius:50%;display:block;" onerror="this.style.display='none';this.parentElement.innerHTML='🧋';" />
+      </div>
+      <div>
+        <div class="brand-name">Shake 'n Chill</div>
+        <div class="brand-sub">Inventory System</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <button class="nav-item active" data-page="dashboard"><span class="nav-icon"><i class="fa fa-gauge-high"></i></span>Dashboard</button>
+      <button class="nav-item" data-page="inventory"><span class="nav-icon"><i class="fa fa-boxes-stacked"></i></span>Inventory</button>
+      <button class="nav-item" data-page="categories"><span class="nav-icon"><i class="fa fa-tags"></i></span>Categories</button>
+      <button class="nav-item" data-page="stock"><span class="nav-icon"><i class="fa fa-arrows-rotate"></i></span>Stock Management<span class="nav-badge" id="low-stock-badge" style="display:none">!</span></button>
+      <button class="nav-item" data-page="suppliers"><span class="nav-icon"><i class="fa fa-truck"></i></span>Suppliers</button>
+      <button class="nav-item" data-page="reports"><span class="nav-icon"><i class="fa fa-chart-bar"></i></span>Reports</button>
+      <button class="nav-item" data-page="settings"><span class="nav-icon"><i class="fa fa-gear"></i></span>Settings</button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar" id="user-avatar">U</div>
+        <div class="user-info">
+          <div class="user-name" id="user-display-name">Loading…</div>
+          <div class="user-role" id="user-role-label">Staff</div>
+        </div>
+        <button class="btn-logout" id="btn-logout" title="Sign out"><i class="fa fa-right-from-bracket"></i></button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <button class="btn-menu-toggle" id="btn-menu-toggle"><i class="fa fa-bars"></i></button>
+    <div class="topbar-title" id="topbar-title">Dashboard</div>
+    <div class="topbar-right">
+      <div class="topbar-search">
+        <i class="fa fa-magnifying-glass"></i>
+        <input type="search" id="global-search" placeholder="Quick search…" />
+      </div>
+      <button class="topbar-icon-btn" id="btn-notif"><i class="fa fa-bell"></i><span class="notif-dot" id="notif-dot" style="display:none"></span></button>
+      <button class="topbar-icon-btn" id="btn-refresh"><i class="fa fa-rotate-right"></i></button>
+    </div>
+  </header>
+
+  <!-- Main content — reuse app.html sections via iframe workaround -->
+  <main class="main-content" id="main-content">
+    <!-- All 7 page sections loaded from app.js -->
+    <div id="pages-container"></div>
+  </main>
+</div>
+
+<!-- Toast -->
+<div id="toast-container" aria-live="polite"></div>
+
+<!-- All modals will be injected by app.js -->
+<div id="modals-container"></div>
+
+<script src="firebase-config.js"></script>
 <script>
-/* ================================================================
-   Shake 'n Chill – Login + OTP via EmailJS
-   Flow: Email/Password → OTP emailed → Verify → app.html
-================================================================ */
 'use strict';
 
-// ══════════════════════════════════════════════════════════════
-//  ★  EMAILJS CREDENTIALS  ★
-//  Replace these 3 values after setting up emailjs.com
-// ══════════════════════════════════════════════════════════════
+// ══ EmailJS ══
 const EMAILJS_PUBLIC_KEY  = 'Mo-_PVmFJ7n4kdFzN';
 const EMAILJS_SERVICE_ID  = 'service_b53kszr';
 const EMAILJS_TEMPLATE_ID = 'jvho9l2';
-
-// Init EmailJS
 emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
 
-// ── Helpers ────────────────────────────────────────────────────
-const $ = id => document.getElementById(id);
-
-let otpExpiry     = 0;
-let countdownInt  = null;
-let pendingEmail  = '';
-let pendingPass   = '';
-let attempts      = 0;
-let lockUntil     = 0;
+// ══ Helpers ══
+const $  = id => document.getElementById(id);
+let otpExpiry = 0, countdownInt = null;
+let pendingEmail = '', pendingPass = '';
+let attempts = 0, lockUntil = 0;
 let otpFlowActive = false;
 
-// ── Alert ──────────────────────────────────────────────────────
-function showAlert(msg, type = 'error') {
-  const el = $('alert');
+function showAuthAlert(msg, type = 'error') {
+  const el = $('auth-alert');
   const icons = { error:'fa-circle-exclamation', success:'fa-circle-check', info:'fa-circle-info' };
-  el.className = `alert ${type}`;
+  el.className = `auth-alert ${type}`;
   el.innerHTML = `<i class="fa ${icons[type]||'fa-circle-info'}"></i> ${msg}`;
   el.style.display = 'flex';
 }
-function hideAlert() { $('alert').style.display = 'none'; }
+function hideAuthAlert() { $('auth-alert').style.display = 'none'; }
 
-// ── Panel switcher ─────────────────────────────────────────────
-function showPanel(id) {
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+function showAuthPanel(id) {
+  document.querySelectorAll('.auth-panel').forEach(p => p.classList.remove('active'));
   $(id).classList.add('active');
-  hideAlert();
+  hideAuthAlert();
 }
 
-// ── Step indicator ─────────────────────────────────────────────
 function setStep(n) {
-  ['step1-dot','step2-dot','step3-dot'].forEach((id, i) => {
-    const dot = $(id);
-    dot.classList.remove('active','done');
-    if (i + 1 < n)  dot.classList.add('done');
-    if (i + 1 === n) dot.classList.add('active');
+  ['step1-dot','step2-dot','step3-dot'].forEach((id,i) => {
+    const d = $(id); d.classList.remove('active','done');
+    if(i+1<n) d.classList.add('done');
+    if(i+1===n) d.classList.add('active');
   });
-  ['line1','line2'].forEach((id, i) =>
-    $(id).classList.toggle('done', i + 1 < n));
+  ['line1','line2'].forEach((id,i) => $(id).classList.toggle('done',i+1<n));
 }
 
-// ── Loading button ─────────────────────────────────────────────
 function setLoading(btnId, on, label) {
-  const btn = $(btnId);
-  if (!btn) return;
-  btn.disabled  = on;
+  const btn = $(btnId); if(!btn) return;
+  btn.disabled = on;
   btn.innerHTML = on ? `<span class="spinner"></span> Please wait…` : label;
 }
 
-// ── Rate limit ─────────────────────────────────────────────────
-function isLockedOut() {
-  if (Date.now() < lockUntil) {
-    showAlert(`Too many attempts. Try again in ${Math.ceil((lockUntil - Date.now()) / 1000)}s.`);
-    return true;
-  }
-  return false;
-}
-
-// ── Password toggle ────────────────────────────────────────────
-$('toggle-pw').addEventListener('click', () => {
-  const inp = $('password'), eye = $('pw-eye');
-  const show = inp.type === 'password';
-  inp.type = show ? 'text' : 'password';
-  eye.className = `fa fa-eye${show ? '-slash' : ''}`;
-});
-
-// ── OTP helpers ────────────────────────────────────────────────
+// ══ OTP ══
 function generateOTP() {
-  // Cryptographically random 6-digit code
   const arr = new Uint32Array(1);
   window.crypto.getRandomValues(arr);
   return String(100000 + (arr[0] % 900000));
 }
-
 function saveOTP(email, code) {
-  localStorage.setItem('snc_otp', JSON.stringify({
-    code,
-    email,
-    expiresAt: Date.now() + 5 * 60 * 1000,
-    attempts:  0
-  }));
+  sessionStorage.setItem('snc_otp', JSON.stringify({ code, email, expiresAt: Date.now()+5*60*1000, attempts:0 }));
 }
+function loadOTP() { try { return JSON.parse(sessionStorage.getItem('snc_otp')||'null'); } catch(e){return null;} }
+function clearOTP() { sessionStorage.removeItem('snc_otp'); }
 
-function loadOTP() {
-  try { return JSON.parse(localStorage.getItem('snc_otp') || 'null'); }
-  catch (e) { return null; }
-}
-
-function clearOTP() { localStorage.removeItem('snc_otp'); }
-
-// ── Send OTP via EmailJS ────────────────────────────────────────
 async function sendOTPEmail(toEmail, code) {
-  // ALWAYS show OTP on screen first so login never gets blocked
-  showAlert(
-    `<div style="line-height:2;">
-       <strong>Your One-Time Password:</strong><br>
-       <span style="font-size:2rem;letter-spacing:.35em;font-family:monospace;
-             color:#0284c7;font-weight:800;display:block;margin:.25rem 0;">${code}</span>
-       <small style="color:#075985;">Valid for 5 minutes. Also sending to your email…</small>
-     </div>`,
-    'info'
-  );
-
-  // Try to send email in background (non-blocking)
+  // Always show on screen first
+  showAuthAlert(
+    `<div style="line-height:2;"><strong>Your OTP:</strong><br>
+     <span style="font-size:1.8rem;letter-spacing:.3em;font-family:monospace;color:#0284c7;font-weight:800;">${code}</span><br>
+     <small>Valid 5 minutes. Also sending to your email…</small></div>`, 'info');
   try {
-    const result = await emailjs.send(
-      EMAILJS_SERVICE_ID,
-      EMAILJS_TEMPLATE_ID,
-      {
-        email:    toEmail,
-        passcode: code,
-        time:     '5 minutes'
-      }
-    );
-    console.log('[EmailJS] Sent OK:', result.status);
-    // Update alert to confirm email sent
-    showAlert(
-      `<div style="line-height:2;">
-         <i class="fa fa-paper-plane"></i>
-         <strong> OTP sent to ${toEmail}</strong><br>
-         <span style="font-size:1.6rem;letter-spacing:.3em;font-family:monospace;
-               color:#0284c7;font-weight:800;">${code}</span><br>
-         <small style="color:#075985;">Check inbox &amp; spam. Valid 5 minutes.</small>
-       </div>`,
-      'success'
-    );
-  } catch (err) {
-    console.error('[EmailJS] Failed:', JSON.stringify(err));
-    // Keep showing OTP on screen — user can still log in
-    showAlert(
-      `<div style="line-height:2;">
-         <strong>⚠️ Email failed — use this code:</strong><br>
-         <span style="font-size:2rem;letter-spacing:.35em;font-family:monospace;
-               color:#0284c7;font-weight:800;display:block;margin:.25rem 0;">${code}</span>
-         <small style="color:#075985;">Valid for 5 minutes.</small>
-       </div>`,
-      'info'
-    );
-  }
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { email:toEmail, passcode:code, time:'5 minutes' });
+    showAuthAlert(
+      `<div style="line-height:2;"><i class="fa fa-paper-plane"></i> <strong>OTP sent to ${toEmail}</strong><br>
+       <span style="font-size:1.8rem;letter-spacing:.3em;font-family:monospace;color:#0284c7;font-weight:800;">${code}</span><br>
+       <small>Check inbox &amp; spam. Valid 5 minutes.</small></div>`, 'success');
+  } catch(e) { /* keep showing code on screen */ }
 }
 
-// ── Countdown timer ────────────────────────────────────────────
 function startCountdown() {
-  if (countdownInt) clearInterval(countdownInt);
-  $('otp-timer').style.display      = 'block';
+  if(countdownInt) clearInterval(countdownInt);
+  $('otp-timer').style.display = 'block';
   $('otp-resend-row').style.display = 'none';
-
   countdownInt = setInterval(() => {
     const left = otpExpiry - Date.now();
-    if (left <= 0) {
-      clearInterval(countdownInt);
-      $('otp-timer').style.display      = 'none';
-      $('otp-resend-row').style.display = 'block';
-      showAlert('OTP expired. Click "Resend OTP" to get a new code.');
-      return;
-    }
-    const m = String(Math.floor(left / 60000)).padStart(2, '0');
-    const s = String(Math.floor((left % 60000) / 1000)).padStart(2, '0');
-    $('otp-countdown').textContent = `${m}:${s}`;
+    if(left<=0) { clearInterval(countdownInt); $('otp-timer').style.display='none'; $('otp-resend-row').style.display='block'; return; }
+    const m=String(Math.floor(left/60000)).padStart(2,'0'), s=String(Math.floor((left%60000)/1000)).padStart(2,'0');
+    $('otp-countdown').textContent=`${m}:${s}`;
   }, 500);
 }
 
-// ── OTP input boxes ────────────────────────────────────────────
-(function () {
-  const boxes = Array.from({ length: 6 }, (_, i) => $(`otp${i}`));
-  boxes.forEach((box, i) => {
-    box.addEventListener('input', e => {
-      const v = e.target.value.replace(/\D/g, '');
-      box.value = v.slice(-1);
-      box.classList.toggle('filled', !!box.value);
-      if (v && i < 5) boxes[i + 1].focus();
+// OTP boxes
+(function(){
+  const boxes = Array.from({length:6},(_,i)=>$(`otp${i}`));
+  boxes.forEach((box,i)=>{
+    box.addEventListener('input', e=>{
+      const v=e.target.value.replace(/\D/g,''); box.value=v.slice(-1);
+      box.classList.toggle('filled',!!box.value);
+      if(v&&i<5) boxes[i+1].focus();
     });
-    box.addEventListener('keydown', e => {
-      if (e.key === 'Backspace') {
-        if (!box.value && i > 0) {
-          boxes[i - 1].value = '';
-          boxes[i - 1].classList.remove('filled');
-          boxes[i - 1].focus();
-        } else {
-          box.value = '';
-          box.classList.remove('filled');
-        }
-      }
-      if (e.key === 'ArrowLeft'  && i > 0) boxes[i - 1].focus();
-      if (e.key === 'ArrowRight' && i < 5) boxes[i + 1].focus();
-      if (e.key === 'Enter') verifyOTP();
+    box.addEventListener('keydown',e=>{
+      if(e.key==='Backspace'){if(!box.value&&i>0){boxes[i-1].value='';boxes[i-1].classList.remove('filled');boxes[i-1].focus();}else{box.value='';box.classList.remove('filled');}}
+      if(e.key==='ArrowLeft'&&i>0)boxes[i-1].focus();
+      if(e.key==='ArrowRight'&&i<5)boxes[i+1].focus();
+      if(e.key==='Enter')verifyOTP();
     });
-    box.addEventListener('paste', e => {
+    box.addEventListener('paste',e=>{
       e.preventDefault();
-      const p = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
-      p.split('').slice(0, 6).forEach((ch, j) => {
-        if (boxes[i + j]) { boxes[i + j].value = ch; boxes[i + j].classList.add('filled'); }
-      });
-      const nx = boxes.findIndex((b, j) => j >= i && !b.value);
-      (nx >= 0 ? boxes[nx] : boxes[5]).focus();
+      const p=(e.clipboardData||window.clipboardData).getData('text').replace(/\D/g,'');
+      p.split('').slice(0,6).forEach((ch,j)=>{if(boxes[i+j]){boxes[i+j].value=ch;boxes[i+j].classList.add('filled');}});
+      const nx=boxes.findIndex((b,j)=>j>=i&&!b.value);
+      (nx>=0?boxes[nx]:boxes[5]).focus();
     });
   });
 })();
+function getOTP(){return Array.from({length:6},(_,i)=>$(`otp${i}`).value).join('');}
+function clearOTPBoxes(){for(let i=0;i<6;i++){$(`otp${i}`).value='';$(`otp${i}`).classList.remove('filled');}}
 
-function getEnteredOTP() {
-  return Array.from({ length: 6 }, (_, i) => $(`otp${i}`).value).join('');
-}
-function clearOTPBoxes() {
-  for (let i = 0; i < 6; i++) {
-    $(`otp${i}`).value = '';
-    $(`otp${i}`).classList.remove('filled');
-  }
-}
+// ══ Toggle password ══
+$('toggle-pw').addEventListener('click',()=>{
+  const inp=$('password'),eye=$('pw-eye'),show=inp.type==='password';
+  inp.type=show?'text':'password'; eye.className=`fa fa-eye${show?'-slash':''}`;
+});
 
-// ════════════════════════════════════════
-//  STEP 1 – Email + Password
-// ════════════════════════════════════════
-$('login-form').addEventListener('submit', async e => {
-  e.preventDefault();
-  hideAlert();
-  if (isLockedOut()) return;
-
-  const email = $('email').value.trim();
-  const pass  = $('password').value;
-
-  if (!email || !pass) {
-    showAlert('Please enter your email and password.');
-    return;
-  }
-
-  setLoading('login-btn', true, '');
-
-  // Add timeout — kung 10 seconds walang response, show error
-  const loginTimeout = setTimeout(() => {
-    otpFlowActive = false;
-    setLoading('login-btn', false, '<i class="fa fa-arrow-right"></i> Continue');
-    showAlert('Connection timed out. Check your internet connection and try again.');
-  }, 10000);
-
+// ══ STEP 1 — Login ══
+$('login-form').addEventListener('submit', async e=>{
+  e.preventDefault(); hideAuthAlert();
+  if(Date.now()<lockUntil){showAuthAlert(`Locked. Try again in ${Math.ceil((lockUntil-Date.now())/1000)}s.`);return;}
+  const email=$('email').value.trim(), pass=$('password').value;
+  if(!email||!pass){showAuthAlert('Please enter your email and password.');return;}
+  setLoading('login-btn',true,'');
+  const timeout=setTimeout(()=>{
+    otpFlowActive=false;
+    setLoading('login-btn',false,'<i class="fa fa-arrow-right"></i> Continue');
+    showAuthAlert('Connection timed out. Check your internet and try again.');
+  },15000);
   try {
-    // Block redirect during OTP flow
-    otpFlowActive = true;
-
-    // Verify credentials with Firebase
-    await auth.signInWithEmailAndPassword(email, pass);
-
-    // Sign out immediately — final sign-in happens after OTP
+    otpFlowActive=true;
+    await auth.signInWithEmailAndPassword(email,pass);
     await auth.signOut();
-
-    clearTimeout(loginTimeout);
-
-    // Save for re-auth after OTP
-    pendingEmail = email;
-    pendingPass  = pass;
-    attempts     = 0;
-
-    // Generate OTP
-    const code = generateOTP();
-    otpExpiry   = Date.now() + 5 * 60 * 1000;
-    saveOTP(email, code);
-
-    // Move to OTP step FIRST so user sees the code on screen
-    $('otp-email-display').textContent = email;
-    clearOTPBoxes();
-    startCountdown();
-    setStep(2);
-    showPanel('panel-otp');
-
-    // Send email (shows code on screen regardless of email success)
-    await sendOTPEmail(email, code);
-
-    setTimeout(() => $('otp0').focus(), 150);
-
-  } catch (err) {
-    clearTimeout(loginTimeout);
-    otpFlowActive = false;
-    clearOTP();
-    attempts++;
-    if (attempts >= 5) {
-      lockUntil = Date.now() + 60_000;
-      showAlert('Too many failed attempts. Locked for 60 seconds.');
-    } else {
-      const map = {
-        'auth/user-not-found':        'No account found with that email.',
-        'auth/wrong-password':        'Incorrect password.',
-        'auth/invalid-credential':    'Incorrect email or password.',
-        'auth/invalid-email':         'Please enter a valid email.',
-        'auth/user-disabled':         'This account has been disabled.',
-        'auth/too-many-requests':     'Too many attempts. Please wait.',
-        'auth/network-request-failed':'Network error. Check your internet connection.',
-      };
-      showAlert(map[err.code] || `Error (${err.code}): ${err.message}`);
+    clearTimeout(timeout);
+    pendingEmail=email; pendingPass=pass; attempts=0;
+    const code=generateOTP(); otpExpiry=Date.now()+5*60*1000;
+    saveOTP(email,code);
+    $('otp-email-display').textContent=email;
+    clearOTPBoxes(); startCountdown(); setStep(2); showAuthPanel('panel-otp');
+    await sendOTPEmail(email,code);
+    setTimeout(()=>$('otp0').focus(),150);
+  } catch(err) {
+    clearTimeout(timeout); otpFlowActive=false; clearOTP(); attempts++;
+    if(attempts>=5){lockUntil=Date.now()+60_000;showAuthAlert('Too many attempts. Locked for 60s.');}
+    else{
+      const map={'auth/user-not-found':'No account found.','auth/wrong-password':'Incorrect password.','auth/invalid-credential':'Incorrect email or password.','auth/network-request-failed':'Network error. Check your connection.'};
+      showAuthAlert(map[err.code]||`Error: ${err.message}`);
     }
-  } finally {
-    setLoading('login-btn', false, '<i class="fa fa-arrow-right"></i> Continue');
-  }
+  } finally { setLoading('login-btn',false,'<i class="fa fa-arrow-right"></i> Continue'); }
 });
 
-// ════════════════════════════════════════
-//  STEP 2 – Verify OTP
-// ════════════════════════════════════════
-async function verifyOTP() {
-  hideAlert();
-  const entered = getEnteredOTP();
-
-  if (entered.length < 6) {
-    showAlert('Please enter all 6 digits.');
-    $('otp0').focus();
+// ══ STEP 2 — Verify OTP ══
+async function verifyOTP(){
+  hideAuthAlert();
+  const entered=getOTP();
+  if(entered.length<6){showAuthAlert('Please enter all 6 digits.');$('otp0').focus();return;}
+  const session=loadOTP();
+  if(!session){showAuthAlert('Session expired. Please log in again.');return;}
+  if(Date.now()>session.expiresAt){clearOTP();showAuthAlert('OTP expired. Request a new one.');$('otp-timer').style.display='none';$('otp-resend-row').style.display='block';return;}
+  const max=3; session.attempts=(session.attempts||0)+1;
+  sessionStorage.setItem('snc_otp',JSON.stringify(session));
+  if(session.attempts>max){clearOTP();otpFlowActive=false;showAuthAlert('Too many attempts. Please log in again.');setTimeout(()=>{clearInterval(countdownInt);setStep(1);showAuthPanel('panel-login');},2000);return;}
+  if(entered!==session.code){
+    const left=max-session.attempts;
+    showAuthAlert(`Wrong OTP. ${left>0?left+' attempt(s) left.':'No attempts left.'}`);
+    clearOTPBoxes();$('otp0').focus();
+    if(left<=0){clearOTP();otpFlowActive=false;setTimeout(()=>{clearInterval(countdownInt);setStep(1);showAuthPanel('panel-login');},2000);}
     return;
   }
-
-  const session = loadOTP();
-  if (!session) {
-    showAlert('Session expired. Please go back and log in again.');
-    return;
-  }
-  if (Date.now() > session.expiresAt) {
-    clearOTP();
-    showAlert('OTP expired. Please request a new one.');
-    $('otp-timer').style.display      = 'none';
-    $('otp-resend-row').style.display = 'block';
-    return;
-  }
-
-  const maxAttempts = 3;
-  session.attempts  = (session.attempts || 0) + 1;
-  localStorage.setItem('snc_otp', JSON.stringify(session));
-
-  if (session.attempts > maxAttempts) {
-    clearOTP();
-    otpFlowActive = false;
-    showAlert('Too many wrong attempts. Please log in again.');
-    setTimeout(() => { clearInterval(countdownInt); setStep(1); showPanel('panel-login'); }, 2000);
-    return;
-  }
-
-  if (entered !== session.code) {
-    const left = maxAttempts - session.attempts;
-    showAlert(`Wrong OTP. ${left > 0 ? left + ' attempt(s) left.' : 'No attempts left.'}`);
-    clearOTPBoxes();
-    $('otp0').focus();
-    if (left <= 0) {
-      clearOTP();
-      otpFlowActive = false;
-      setTimeout(() => { clearInterval(countdownInt); setStep(1); showPanel('panel-login'); }, 2000);
-    }
-    return;
-  }
-
-  // ✅ OTP correct — complete sign-in
-  clearOTP();
-  clearInterval(countdownInt);
-  setLoading('btn-verify-otp', true, '');
-
+  clearOTP(); clearInterval(countdownInt);
+  setLoading('btn-verify-otp',true,'');
   try {
-    await auth.signInWithEmailAndPassword(pendingEmail, pendingPass);
-    otpFlowActive = false;
-    setStep(3);
-    showPanel('panel-success');
-
-    // Use multiple redirect methods for WebViewer compatibility
-    setTimeout(() => {
-      try {
-        window.location.replace('app.html');
-      } catch(e) {
-        try {
-          window.location.href = 'app.html';
-        } catch(e2) {
-          document.location = 'app.html';
-        }
-      }
-    }, 1500);
-  } catch (err) {
-    otpFlowActive = false;
-    showAlert('Re-authentication failed. Please log in again.');
-    setLoading('btn-verify-otp', false, '<i class="fa fa-shield-halved"></i> Verify & Sign In');
-    setStep(1);
-    showPanel('panel-login');
+    await auth.signInWithEmailAndPassword(pendingEmail,pendingPass);
+    otpFlowActive=false;
+    setStep(3); showAuthPanel('panel-success');
+    // Show app after short delay
+    setTimeout(showApp, 1500);
+  } catch(err){
+    otpFlowActive=false;
+    showAuthAlert('Re-auth failed. Please log in again.');
+    setLoading('btn-verify-otp',false,'<i class="fa fa-shield-halved"></i> Verify & Sign In');
+    setStep(1); showAuthPanel('panel-login');
   }
 }
+$('btn-verify-otp').addEventListener('click',verifyOTP);
 
-$('btn-verify-otp').addEventListener('click', verifyOTP);
-
-// ── Resend OTP ─────────────────────────────────────────────────
-$('resend-link').addEventListener('click', async () => {
-  if (!pendingEmail) return;
-  clearOTPBoxes();
-  hideAlert();
-  $('resend-link').style.pointerEvents = 'none';
-  try {
-    const code = generateOTP();
-    otpExpiry   = Date.now() + 5 * 60 * 1000;
-    saveOTP(pendingEmail, code);
-    await sendOTPEmail(pendingEmail, code);
-    startCountdown();
-    setTimeout(() => $('otp0').focus(), 50);
-  } catch (e) {
-    showAlert('Could not resend OTP. Try again.');
-  } finally {
-    setTimeout(() => { $('resend-link').style.pointerEvents = ''; }, 4000);
-  }
+// ══ Resend ══
+$('resend-link').addEventListener('click',async()=>{
+  if(!pendingEmail)return; clearOTPBoxes(); hideAuthAlert();
+  $('resend-link').style.pointerEvents='none';
+  const code=generateOTP(); otpExpiry=Date.now()+5*60*1000; saveOTP(pendingEmail,code);
+  await sendOTPEmail(pendingEmail,code); startCountdown();
+  setTimeout(()=>{$('otp0').focus();$('resend-link').style.pointerEvents='';},50);
 });
 
-// ── Back buttons ───────────────────────────────────────────────
-$('back-from-otp').addEventListener('click', () => {
-  clearInterval(countdownInt);
-  clearOTP();
-  otpFlowActive = false;
-  pendingEmail  = '';
-  pendingPass   = '';
-  setStep(1);
-  showPanel('panel-login');
+// ══ Back / Forgot ══
+$('back-from-otp').addEventListener('click',()=>{clearInterval(countdownInt);clearOTP();otpFlowActive=false;pendingEmail='';pendingPass='';setStep(1);showAuthPanel('panel-login');});
+$('forgot-link').addEventListener('click',e=>{e.preventDefault();showAuthPanel('panel-forgot');});
+$('back-from-forgot').addEventListener('click',()=>showAuthPanel('panel-login'));
+$('forgot-form').addEventListener('submit',async e=>{
+  e.preventDefault(); hideAuthAlert();
+  const email=$('reset-email').value.trim();
+  if(!email){showAuthAlert('Please enter your email.');return;}
+  setLoading('reset-btn',true,'');
+  try{await auth.sendPasswordResetEmail(email);showAuthAlert('Reset link sent! Check your inbox.','success');}
+  catch(err){showAuthAlert(err.message||'Could not send reset email.');}
+  setLoading('reset-btn',false,'Send Reset Link');
 });
 
-$('forgot-link').addEventListener('click', e => {
-  e.preventDefault();
-  showPanel('panel-forgot');
-});
+// ══ Show/hide screens ══
+function showApp(){
+  $('auth-screen').style.display='none';
+  $('app-wrapper').style.display='block';
+}
+function showLogin(){
+  $('auth-screen').style.display='flex';
+  $('app-wrapper').style.display='none';
+}
 
-$('back-from-forgot').addEventListener('click', () => showPanel('panel-login'));
-
-// ── Forgot password ────────────────────────────────────────────
-$('forgot-form').addEventListener('submit', async e => {
-  e.preventDefault();
-  hideAlert();
-  const email = $('reset-email').value.trim();
-  if (!email) { showAlert('Please enter your email.'); return; }
-  setLoading('reset-btn', true, '');
-  try {
-    await auth.sendPasswordResetEmail(email);
-    showAlert('Password reset link sent! Check your inbox.', 'success');
-  } catch (err) {
-    showAlert(err.message || 'Could not send reset email.');
-  }
-  setLoading('reset-btn', false, 'Send Reset Link');
-});
-
-// ── Auth state — only redirect when OTP flow is NOT active ─────
-auth.onAuthStateChanged(user => {
-  if (user && !otpFlowActive) {
-    try {
-      window.location.replace('app.html');
-    } catch(e) {
-      window.location.href = 'app.html';
-    }
+// ══ Auth state ══
+auth.onAuthStateChanged(user=>{
+  $('app-loading').style.display='none';
+  if(user && !otpFlowActive){
+    showApp();
+  } else if(!user && !otpFlowActive){
+    showLogin();
   }
 });
 </script>
+
+<!-- Load the main app logic -->
+<script src="js/app.js"></script>
+
 </body>
 </html>
