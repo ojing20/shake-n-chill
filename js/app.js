@@ -130,30 +130,6 @@ function closeSidebar() { $('sidebar').classList.remove('open'); $('sidebar-over
 // ──────────────────────────────────────────────────────────────
 auth.onAuthStateChanged(async user => {
   if (!user) return; // handled by index.html auth screen
-
-  // Inject page sections from app.html into pages-container
-  const container = $('pages-container');
-  if (container && !container.hasChildNodes()) {
-    try {
-      const resp = await fetch('app.html');
-      const text = await resp.text();
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(text, 'text/html');
-      const mainContent = doc.getElementById('main-content');
-      if (mainContent) {
-        container.innerHTML = mainContent.innerHTML;
-      }
-      // Also inject modals
-      const modalsContainer = document.getElementById('modals-container');
-      if (modalsContainer) {
-        doc.querySelectorAll('.modal-overlay').forEach(m => {
-          modalsContainer.appendChild(document.importNode(m, true));
-        });
-      }
-    } catch(e) {
-      console.warn('Could not load app.html sections:', e);
-    }
-  }
   state.user = user;
 
   // Load user profile from Firestore
