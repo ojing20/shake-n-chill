@@ -960,7 +960,19 @@ async function verifyOTP() {
     otpFlowActive = false;
     setStep(3);
     showPanel('panel-success');
-    setTimeout(() => { window.location.href = 'app.html'; }, 1500);
+
+    // Use multiple redirect methods for WebViewer compatibility
+    setTimeout(() => {
+      try {
+        window.location.replace('app.html');
+      } catch(e) {
+        try {
+          window.location.href = 'app.html';
+        } catch(e2) {
+          document.location = 'app.html';
+        }
+      }
+    }, 1500);
   } catch (err) {
     otpFlowActive = false;
     showAlert('Re-authentication failed. Please log in again.');
@@ -1029,7 +1041,11 @@ $('forgot-form').addEventListener('submit', async e => {
 // ── Auth state — only redirect when OTP flow is NOT active ─────
 auth.onAuthStateChanged(user => {
   if (user && !otpFlowActive) {
-    window.location.href = 'app.html';
+    try {
+      window.location.replace('app.html');
+    } catch(e) {
+      window.location.href = 'app.html';
+    }
   }
 });
 </script>

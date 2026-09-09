@@ -130,7 +130,11 @@ function closeSidebar() { $('sidebar').classList.remove('open'); $('sidebar-over
 // ──────────────────────────────────────────────────────────────
 auth.onAuthStateChanged(async user => {
   if (!user) {
-    window.location.href = 'index.html';
+    try {
+      window.location.replace('index.html');
+    } catch(e) {
+      window.location.href = 'index.html';
+    }
     return;
   }
 
@@ -1451,7 +1455,11 @@ document.addEventListener('DOMContentLoaded', () => {
   $('btn-logout')?.addEventListener('click', async () => {
     stopListeners();
     await auth.signOut();
-    window.location.href = 'index.html';
+    try {
+      window.location.replace('index.html');
+    } catch(e) {
+      window.location.href = 'index.html';
+    }
   });
 
   /* ── Global search ── */
