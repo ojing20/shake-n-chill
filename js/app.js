@@ -1582,7 +1582,12 @@ function initAppListeners() {
   });
 });
 
-// ──────────────────────────────────────────────────────────────
-//  Make navigateTo available globally (used in inline onclick)
-// ──────────────────────────────────────────────────────────────
+// Make navigateTo available globally (used in inline onclick)
 window.navigateTo = navigateTo;
+
+// Global sign out function
+window.signOut = async function() {
+  stopListeners();
+  await auth.signOut();
+  if (typeof showLogin === 'function') showLogin();
+};

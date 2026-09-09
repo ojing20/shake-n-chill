@@ -215,13 +215,13 @@
     </div>
     <nav class="sidebar-nav">
       <div class="nav-section-label">Main</div>
-      <button class="nav-item active" data-page="dashboard"><span class="nav-icon"><i class="fa fa-gauge-high"></i></span>Dashboard</button>
-      <button class="nav-item" data-page="inventory"><span class="nav-icon"><i class="fa fa-boxes-stacked"></i></span>Inventory</button>
-      <button class="nav-item" data-page="categories"><span class="nav-icon"><i class="fa fa-tags"></i></span>Categories</button>
-      <button class="nav-item" data-page="stock"><span class="nav-icon"><i class="fa fa-arrows-rotate"></i></span>Stock Management<span class="nav-badge" id="low-stock-badge" style="display:none">!</span></button>
-      <button class="nav-item" data-page="suppliers"><span class="nav-icon"><i class="fa fa-truck"></i></span>Suppliers</button>
-      <button class="nav-item" data-page="reports"><span class="nav-icon"><i class="fa fa-chart-bar"></i></span>Reports</button>
-      <button class="nav-item" data-page="settings"><span class="nav-icon"><i class="fa fa-gear"></i></span>Settings</button>
+      <button class="nav-item active" data-page="dashboard" onclick="navigateTo('dashboard')"><span class="nav-icon"><i class="fa fa-gauge-high"></i></span>Dashboard</button>
+      <button class="nav-item" data-page="inventory" onclick="navigateTo('inventory')"><span class="nav-icon"><i class="fa fa-boxes-stacked"></i></span>Inventory</button>
+      <button class="nav-item" data-page="categories" onclick="navigateTo('categories')"><span class="nav-icon"><i class="fa fa-tags"></i></span>Categories</button>
+      <button class="nav-item" data-page="stock" onclick="navigateTo('stock')"><span class="nav-icon"><i class="fa fa-arrows-rotate"></i></span>Stock Management<span class="nav-badge" id="low-stock-badge" style="display:none">!</span></button>
+      <button class="nav-item" data-page="suppliers" onclick="navigateTo('suppliers')"><span class="nav-icon"><i class="fa fa-truck"></i></span>Suppliers</button>
+      <button class="nav-item" data-page="reports" onclick="navigateTo('reports')"><span class="nav-icon"><i class="fa fa-chart-bar"></i></span>Reports</button>
+      <button class="nav-item" data-page="settings" onclick="navigateTo('settings')"><span class="nav-icon"><i class="fa fa-gear"></i></span>Settings</button>
     </nav>
     <div class="sidebar-footer">
       <div class="sidebar-user">
@@ -230,7 +230,7 @@
           <div class="user-name" id="user-display-name">Loading…</div>
           <div class="user-role" id="user-role-label">Staff</div>
         </div>
-        <button class="btn-logout" id="btn-logout" title="Sign out"><i class="fa fa-right-from-bracket"></i></button>
+        <button class="btn-logout" id="btn-logout" title="Sign out" onclick="signOut()"><i class="fa fa-right-from-bracket"></i></button>
       </div>
     </div>
   </aside>
