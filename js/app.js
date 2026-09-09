@@ -126,10 +126,10 @@ function openSidebar()  { $('sidebar').classList.add('open'); $('sidebar-overlay
 function closeSidebar() { $('sidebar').classList.remove('open'); $('sidebar-overlay').classList.remove('open'); }
 
 // ──────────────────────────────────────────────────────────────
-//  1.  AUTH & BOOT
+//  1.  AUTH & BOOT — called from index.html after OTP verified
 // ──────────────────────────────────────────────────────────────
-auth.onAuthStateChanged(async user => {
-  if (!user) return; // handled by index.html auth screen
+async function initApp(user) {
+  if (!user) return;
   state.user = user;
 
   // Load user profile from Firestore
@@ -177,11 +177,12 @@ auth.onAuthStateChanged(async user => {
   // Start real-time listeners
   startListeners();
 
-  // Show app (already shown by index.html auth handler)
+  // Show app
   $('app-loading').style.display = 'none';
   if ($('app-wrapper')) $('app-wrapper').style.display = 'block';
+  if ($('auth-screen')) $('auth-screen').style.display = 'none';
 
-  // Re-attach all event listeners now that DOM is visible
+  // Attach all event listeners
   initAppListeners();
 
   // Set dashboard date
@@ -189,7 +190,9 @@ auth.onAuthStateChanged(async user => {
     { weekday:'long', year:'numeric', month:'long', day:'numeric' });
 
   navigateTo('dashboard');
-});
+}
+
+window.initApp = initApp;
 
 async function loadStoreSettings() {
   try {

@@ -711,7 +711,7 @@ async function verifyOTP(){
     otpFlowActive=false;
     setStep(3); showAuthPanel('panel-success');
     // Show app after short delay
-    setTimeout(showApp, 1500);
+    setTimeout(()=>showApp(), 1500);
   } catch(err){
     otpFlowActive=false;
     showAuthAlert('Re-auth failed. Please log in again.');
@@ -748,6 +748,8 @@ $('forgot-form').addEventListener('submit',async e=>{
 function showApp(){
   $('auth-screen').style.display='none';
   $('app-wrapper').style.display='block';
+  // Initialize the main app
+  auth.currentUser && typeof initApp==='function' && initApp(auth.currentUser);
 }
 function showLogin(){
   $('auth-screen').style.display='flex';
