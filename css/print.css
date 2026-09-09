@@ -1,0 +1,30 @@
+/* ============================================================
+   Print Stylesheet – StoreTrack Reports
+   ============================================================ */
+@media print {
+  .sidebar,
+  .topbar,
+  .btn,
+  .filter-bar,
+  .tabs,
+  #toast-container,
+  .modal-overlay,
+  #app-loading,
+  .btn-menu-toggle,
+  .topbar-right  { display: none !important; }
+
+  .main-content  { margin: 0 !important; padding: 0 !important; }
+
+  body           { background: #fff !important; font-size: 11pt; }
+
+  .card          { box-shadow: none !important; border: 1px solid #ccc !important; }
+
+  .page-section  { display: block !important; }
+  .page-section:not(#page-reports) { display: none !important; }
+
+  table          { width: 100%; border-collapse: collapse; }
+  thead th       { background: #f0f0f0 !important; color: #000 !important; }
+  tbody tr       { border-bottom: 1px solid #ddd !important; }
+
+  @page          { margin: 1.5cm; size: A4 landscape; }
+}
