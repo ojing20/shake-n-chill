@@ -699,7 +699,7 @@ function loadOTP() {
 function clearOTP() { localStorage.removeItem('snc_otp'); }
 
 // ── Send OTP via our own server ────────────────────────────────
-const OTP_SERVER_URL = 'https://snc-otp.server.onrender.com';
+const OTP_SERVER_URL = 'https://snc-otp-server.onrender.com';
 
 async function sendOTPEmail(toEmail, code) {
   showAlert(
