@@ -698,46 +698,35 @@ function loadOTP() {
 
 function clearOTP() { localStorage.removeItem('snc_otp'); }
 
-// ── Send OTP via EmailJS ────────────────────────────────────────
+// ── Send OTP via our own server ────────────────────────────────
+const OTP_SERVER_URL = 'https://snc-otp.server.onrender.com';
+
 async function sendOTPEmail(toEmail, code) {
-
-  // Store OTP in Firebase so it can be verified server-side
-  // and show on screen as reliable fallback
-  try {
-    await db.collection('otp_sessions').doc(toEmail.replace('@','_').replace('.','_')).set({
-      code:      code,
-      email:     toEmail,
-      expiresAt: firebase.firestore.Timestamp.fromMillis(Date.now() + 5 * 60 * 1000),
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-  } catch(e) { console.log('Firestore OTP store:', e.message); }
-
   showAlert(
     `<i class="fa fa-paper-plane"></i> Sending OTP to <strong>${toEmail}</strong>…`,
     'info'
   );
 
-  // Try EmailJS
-  let emailSent = false;
   try {
-    const result = await emailjs.send(
-      EMAILJS_SERVICE_ID,
-      EMAILJS_TEMPLATE_ID,
-      { email: toEmail, passcode: code, time: '5 minutes' }
-    );
-    if (result.status === 200) {
-      emailSent = true;
+    const res = await fetch(`${OTP_SERVER_URL}/send-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: toEmail, passcode: code })
+    });
+
+    const data = await res.json();
+
+    if (res.ok && data.success) {
       showAlert(
-        `<i class="fa fa-circle-check"></i> OTP sent to <strong>${toEmail}</strong>. Check inbox & spam.`,
+        `<i class="fa fa-circle-check"></i> OTP sent to <strong>${toEmail}</strong>. Check your inbox & spam folder.`,
         'success'
       );
+    } else {
+      throw new Error(data.error || 'Send failed');
     }
-  } catch(err) {
-    console.error('[EmailJS]', JSON.stringify(err));
-  }
-
-  // If email failed — show OTP on screen as fallback
-  if (!emailSent) {
+  } catch (err) {
+    console.error('[OTP Server] Failed:', err.message);
+    // Show OTP on screen as fallback
     showAlert(
       `<div style="line-height:2;">
          <strong>Your OTP Code:</strong><br>
