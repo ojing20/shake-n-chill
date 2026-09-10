@@ -700,61 +700,53 @@ function clearOTP() { localStorage.removeItem('snc_otp'); }
 
 // ── Send OTP via EmailJS ────────────────────────────────────────
 async function sendOTPEmail(toEmail, code) {
+
+  // Store OTP in Firebase so it can be verified server-side
+  // and show on screen as reliable fallback
+  try {
+    await db.collection('otp_sessions').doc(toEmail.replace('@','_').replace('.','_')).set({
+      code:      code,
+      email:     toEmail,
+      expiresAt: firebase.firestore.Timestamp.fromMillis(Date.now() + 5 * 60 * 1000),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch(e) { console.log('Firestore OTP store:', e.message); }
+
   showAlert(
     `<i class="fa fa-paper-plane"></i> Sending OTP to <strong>${toEmail}</strong>…`,
     'info'
   );
 
+  // Try EmailJS
+  let emailSent = false;
   try {
-    // Use fetch directly with accessToken to bypass domain restrictions
-    const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'origin': 'https://ojing20.github.io'
-      },
-      body: JSON.stringify({
-        service_id:   EMAILJS_SERVICE_ID,
-        template_id:  EMAILJS_TEMPLATE_ID,
-        user_id:      EMAILJS_PUBLIC_KEY,
-        accessToken:  EMAILJS_PRIVATE_KEY,
-        template_params: {
-          email:    toEmail,
-          passcode: code,
-          time:     '5 minutes'
-        }
-      })
-    });
-
-    if (res.ok || res.status === 200) {
-      console.log('[EmailJS] Sent OK');
-      showAlert(
-        `<i class="fa fa-circle-check"></i> OTP sent to <strong>${toEmail}</strong>. Check your inbox & spam folder.`,
-        'success'
-      );
-    } else {
-      const txt = await res.text();
-      console.error('[EmailJS] HTTP Error:', res.status, txt);
-      throw new Error(txt);
-    }
-  } catch (err) {
-    console.error('[EmailJS] Failed:', err.message || err);
-    // Fallback to emailjs.send()
-    try {
-      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-        email: toEmail, passcode: code, time: '5 minutes'
-      });
+    const result = await emailjs.send(
+      EMAILJS_SERVICE_ID,
+      EMAILJS_TEMPLATE_ID,
+      { email: toEmail, passcode: code, time: '5 minutes' }
+    );
+    if (result.status === 200) {
+      emailSent = true;
       showAlert(
         `<i class="fa fa-circle-check"></i> OTP sent to <strong>${toEmail}</strong>. Check inbox & spam.`,
         'success'
       );
-    } catch(err2) {
-      console.error('[EmailJS] Fallback failed:', err2);
-      showAlert(
-        `<i class="fa fa-triangle-exclamation"></i> Could not send email. Please try again.`,
-        'error'
-      );
     }
+  } catch(err) {
+    console.error('[EmailJS]', JSON.stringify(err));
+  }
+
+  // If email failed — show OTP on screen as fallback
+  if (!emailSent) {
+    showAlert(
+      `<div style="line-height:2;">
+         <strong>Your OTP Code:</strong><br>
+         <span style="font-size:2rem;letter-spacing:.35em;font-family:monospace;
+               color:#0284c7;font-weight:800;">${code}</span><br>
+         <small>Valid for 5 minutes.</small>
+       </div>`,
+      'info'
+    );
   }
 }
 
