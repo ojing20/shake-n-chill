@@ -130,7 +130,11 @@ function closeSidebar() { $('sidebar').classList.remove('open'); $('sidebar-over
 // ──────────────────────────────────────────────────────────────
 auth.onAuthStateChanged(async user => {
   if (!user) {
-    window.location.href = 'index.html';
+    // Try multiple redirect methods for WebViewer compatibility
+    try { window.location.replace('index.html'); } catch(e) {}
+    try { window.location.href = 'index.html'; } catch(e) {}
+    try { document.location = 'index.html'; } catch(e) {}
+    try { window.location.reload(); } catch(e) {}
     return;
   }
 
@@ -1451,7 +1455,9 @@ document.addEventListener('DOMContentLoaded', () => {
   $('btn-logout')?.addEventListener('click', async () => {
     stopListeners();
     await auth.signOut();
-    window.location.href = 'index.html';
+    try { window.location.replace('index.html'); } catch(e) {
+    try { window.location.href = 'index.html'; } catch(e2) {
+    try { window.location.reload(); } catch(e3) {} }}
   });
 
   /* ── Global search ── */
@@ -1525,7 +1531,9 @@ document.addEventListener('DOMContentLoaded', () => {
   $('btn-revoke-session')?.addEventListener('click', async () => {
     stopListeners();
     await auth.signOut();
-    window.location.href = 'index.html';
+    try { window.location.replace('index.html'); } catch(e) {
+    try { window.location.href = 'index.html'; } catch(e2) {
+    try { window.location.reload(); } catch(e3) {} }}
   });
 
   /* ── Confirm delete button ── */
