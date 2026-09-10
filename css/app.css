@@ -94,11 +94,8 @@ img { max-width: 100%; display: block; }
    Layout wrapper
    ────────────────────────────────────────── */
 #app-wrapper {
-  display: none;
+  display: none; /* shown after auth check */
   min-height: 100vh;
-}
-#app-wrapper.visible {
-  display: block !important;
 }
 
 /* ──────────────────────────────────────────

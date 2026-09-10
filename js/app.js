@@ -91,7 +91,6 @@ const PAGE_TITLES = {
 };
 
 function navigateTo(page) {
-  console.log('[navigateTo] page:', page, 'user:', state.user?.email);
   // Hide all sections
   document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => {
@@ -129,9 +128,12 @@ function closeSidebar() { $('sidebar').classList.remove('open'); $('sidebar-over
 // ──────────────────────────────────────────────────────────────
 //  1.  AUTH & BOOT
 // ──────────────────────────────────────────────────────────────
-async function initApp(user) {
-  if (!user) return;
-  if (state.user && state.user.uid === user.uid) return; // already initialized
+auth.onAuthStateChanged(async user => {
+  if (!user) {
+    window.location.href = 'index.html';
+    return;
+  }
+
   state.user = user;
 
   // Load user profile from Firestore
@@ -181,20 +183,14 @@ async function initApp(user) {
 
   // Show app
   $('app-loading').style.display = 'none';
-  if ($('app-wrapper')) $('app-wrapper').style.display = 'block';
-  if ($('auth-screen')) $('auth-screen').style.display = 'none';
-
-  // Attach all event listeners
-  initAppListeners();
+  $('app-wrapper').style.display = 'block';
 
   // Set dashboard date
   $('dashboard-date').textContent = new Date().toLocaleDateString('en-PH',
     { weekday:'long', year:'numeric', month:'long', day:'numeric' });
 
   navigateTo('dashboard');
-}
-
-window.initApp = initApp;
+});
 
 async function loadStoreSettings() {
   try {
@@ -1438,140 +1434,152 @@ function doGlobalSearch(query) {
 }
 
 // ──────────────────────────────────────────────────────────────
-//  13.  EVENT LISTENERS — single delegation on document
+//  13.  EVENT LISTENERS
 // ──────────────────────────────────────────────────────────────
-// Attach once at script load — no need to wait for auth
-(function attachListeners() {
+document.addEventListener('DOMContentLoaded', () => {
 
-  // ── Click delegation ──────────────────────────────────────
-  document.addEventListener('click', function(e) {
+  /* ── Navigation ── */
+  document.querySelectorAll('.nav-item[data-page]').forEach(btn => {
+    btn.addEventListener('click', () => navigateTo(btn.dataset.page));
+  });
 
-    // Nav items
-    const navBtn = e.target.closest('.nav-item[data-page]');
-    if (navBtn) {
-      console.log('[NAV] clicked:', navBtn.dataset.page);
-      navigateTo(navBtn.dataset.page);
-      return;
+  /* ── Sidebar mobile toggle ── */
+  $('btn-menu-toggle')?.addEventListener('click', openSidebar);
+  $('sidebar-overlay')?.addEventListener('click', closeSidebar);
+
+  /* ── Logout ── */
+  $('btn-logout')?.addEventListener('click', async () => {
+    stopListeners();
+    await auth.signOut();
+    window.location.href = 'index.html';
+  });
+
+  /* ── Global search ── */
+  $('global-search')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') doGlobalSearch(e.target.value.trim());
+  });
+
+  /* ── Refresh button ── */
+  $('btn-refresh')?.addEventListener('click', () => {
+    const active = document.querySelector('.nav-item.active');
+    if (active) navigateTo(active.dataset.page);
+    toast('Data refreshed.', 'info', 2000);
+  });
+
+  /* ── Quick add (Dashboard) ── */
+  $('btn-quick-add-product')?.addEventListener('click', () => openProductModal());
+
+  /* ── Product modal ── */
+  $('btn-add-product')?.addEventListener('click',  () => openProductModal());
+  $('btn-save-product')?.addEventListener('click', saveProduct);
+
+  /* ── Category modal ── */
+  $('btn-add-category')?.addEventListener('click',  () => openCategoryModal());
+  $('btn-save-category')?.addEventListener('click', saveCategory);
+  $('cat-search')?.addEventListener('input', renderCategoryCards);
+
+  /* ── Inventory filters ── */
+  $('inv-search')?.addEventListener('input', renderInventoryTable);
+  $('inv-filter-category')?.addEventListener('change', renderInventoryTable);
+  $('inv-filter-status')?.addEventListener('change', renderInventoryTable);
+  $('btn-export-inv')?.addEventListener('click', exportInventory);
+
+  /* ── Stock transaction ── */
+  $('btn-stock-in')?.addEventListener('click',     () => openStockModal('stock_in'));
+  $('btn-stock-out')?.addEventListener('click',    () => openStockModal('stock_out'));
+  $('btn-adjust-stock')?.addEventListener('click', () => openStockModal('adjustment'));
+  $('btn-save-txn')?.addEventListener('click',     saveStockTransaction);
+  $('txn-product')?.addEventListener('change',     updateTxnCurrentStock);
+
+  /* ── Transaction filters ── */
+  $('txn-search')?.addEventListener('input',       renderTransactionTable);
+  $('txn-filter-type')?.addEventListener('change', renderTransactionTable);
+  $('txn-filter-date')?.addEventListener('change', renderTransactionTable);
+
+  /* ── Supplier modal ── */
+  $('btn-add-supplier')?.addEventListener('click',  () => openSupplierModal());
+  $('btn-save-supplier')?.addEventListener('click', saveSupplier);
+  $('sup-search')?.addEventListener('input',        renderSuppliersTable);
+  $('sup-filter-status')?.addEventListener('change',renderSuppliersTable);
+
+  /* ── Reports ── */
+  $('btn-print-report')?.addEventListener('click', printReport);
+  $('btn-apply-dates')?.addEventListener('click',  renderReportSummary);
+
+  /* ── Settings forms ── */
+  $('store-info-form')?.addEventListener('submit', saveStoreSettings);
+  $('profile-form')?.addEventListener('submit',    updateProfile);
+  $('change-pw-form')?.addEventListener('submit',  changePassword);
+  $('btn-invite-user')?.addEventListener('click',  () => openModal('modal-invite-user'));
+  $('btn-save-invite')?.addEventListener('click',  inviteUser);
+
+  $('btn-verify-email')?.addEventListener('click', async () => {
+    try {
+      await state.user.sendEmailVerification();
+      toast('Verification email sent. Check your inbox.', 'info');
+    } catch (e) {
+      toast(e.message, 'error');
     }
+  });
 
-    // Tab buttons
-    const tabBtn = e.target.closest('.tab-btn[data-tab]');
-    if (tabBtn) {
-      const tabName = tabBtn.dataset.tab;
-      tabBtn.closest('.tabs').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      tabBtn.classList.add('active');
-      const parent = tabBtn.closest('.page-section') || document;
-      parent.querySelectorAll('.tab-panel').forEach(p => {
-        p.style.display = p.id === `tab-${tabName}` ? 'block' : 'none';
+  $('btn-revoke-session')?.addEventListener('click', async () => {
+    stopListeners();
+    await auth.signOut();
+    window.location.href = 'index.html';
+  });
+
+  /* ── Confirm delete button ── */
+  $('btn-confirm-delete')?.addEventListener('click', () => {
+    if (state.confirmCallback) { state.confirmCallback(); state.confirmCallback = null; }
+  });
+
+  /* ── Close modals (data-close attribute) ── */
+  document.querySelectorAll('[data-close]').forEach(el => {
+    el.addEventListener('click', () => closeModal(el.dataset.close));
+  });
+
+  /* ── Close modal on overlay click ── */
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) closeModal(overlay.id);
+    });
+  });
+
+  /* ── Tabs (generic) ── */
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tabName = btn.dataset.tab;
+      const parent  = btn.closest('.page-section') || btn.closest('section') || document;
+
+      // Deactivate sibling tab buttons
+      btn.closest('.tabs').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      // Show/hide panels
+      parent.querySelectorAll('.tab-panel').forEach(panel => {
+        panel.style.display = panel.id === `tab-${tabName}` ? 'block' : 'none';
       });
-      if (tabName==='lowstock')      renderLowStockTable();
-      if (tabName==='rep-valuation') renderValuationTable();
-      if (tabName==='rep-movement')  renderMovementTable();
-      if (tabName==='rep-lowstock')  renderRepLowStockTable();
-      if (tabName==='set-users')     loadUsersList();
-      if (tabName==='set-profile')   loadSettingsPage();
-      return;
-    }
 
-    // Close modal
-    const closeBtn = e.target.closest('[data-close]');
-    if (closeBtn) { closeModal(closeBtn.dataset.close); return; }
-
-    // Modal overlay background
-    if (e.target.classList && e.target.classList.contains('modal-overlay')) {
-      closeModal(e.target.id); return;
-    }
-
-    // Buttons by ID — find nearest button with an id
-    const btn = e.target.closest('button[id], a[id]');
-    if (!btn) return;
-    const id = btn.id;
-
-    switch(id) {
-      case 'btn-menu-toggle':       openSidebar(); break;
-      case 'btn-logout':            signOut(); break;
-      case 'btn-refresh':           { const a=document.querySelector('.nav-item.active'); if(a)navigateTo(a.dataset.page); toast('Data refreshed.','info',2000); break; }
-      case 'btn-quick-add-product': openProductModal(); break;
-      case 'btn-add-product':       openProductModal(); break;
-      case 'btn-save-product':      saveProduct(); break;
-      case 'btn-add-category':      openCategoryModal(); break;
-      case 'btn-save-category':     saveCategory(); break;
-      case 'btn-export-inv':        exportInventory(); break;
-      case 'btn-stock-in':          openStockModal('stock_in'); break;
-      case 'btn-stock-out':         openStockModal('stock_out'); break;
-      case 'btn-adjust-stock':      openStockModal('adjustment'); break;
-      case 'btn-save-txn':          saveStockTransaction(); break;
-      case 'btn-add-supplier':      openSupplierModal(); break;
-      case 'btn-save-supplier':     saveSupplier(); break;
-      case 'btn-print-report':      printReport(); break;
-      case 'btn-apply-dates':       renderReportSummary(); break;
-      case 'btn-invite-user':       openModal('modal-invite-user'); break;
-      case 'btn-save-invite':       inviteUser(); break;
-      case 'btn-verify-email':      state.user?.sendEmailVerification().then(()=>toast('Verification sent!','info')).catch(err=>toast(err.message,'error')); break;
-      case 'btn-revoke-session':    signOut(); break;
-      case 'btn-confirm-delete':    if(state.confirmCallback){state.confirmCallback();state.confirmCallback=null;} break;
-    }
+      // Trigger sub-renders
+      if (tabName === 'lowstock')      renderLowStockTable();
+      if (tabName === 'rep-valuation') renderValuationTable();
+      if (tabName === 'rep-movement')  renderMovementTable();
+      if (tabName === 'rep-lowstock')  renderRepLowStockTable();
+      if (tabName === 'set-users')     loadUsersList();
+      if (tabName === 'set-profile')   loadSettingsPage();
+    });
   });
 
-  // ── Sidebar overlay click ─────────────────────────────────
-  document.addEventListener('click', function(e) {
-    if (e.target && e.target.id === 'sidebar-overlay') closeSidebar();
-  });
-
-  // ── Input events ─────────────────────────────────────────
-  document.addEventListener('input', function(e) {
-    switch(e.target.id) {
-      case 'inv-search':  renderInventoryTable(); break;
-      case 'cat-search':  renderCategoryCards();  break;
-      case 'txn-search':  renderTransactionTable(); break;
-      case 'sup-search':  renderSuppliersTable(); break;
-    }
-  });
-
-  // ── Change events ─────────────────────────────────────────
-  document.addEventListener('change', function(e) {
-    switch(e.target.id) {
-      case 'inv-filter-category': renderInventoryTable(); break;
-      case 'inv-filter-status':   renderInventoryTable(); break;
-      case 'txn-filter-type':     renderTransactionTable(); break;
-      case 'txn-filter-date':     renderTransactionTable(); break;
-      case 'txn-product':         updateTxnCurrentStock(); break;
-      case 'sup-filter-status':   renderSuppliersTable(); break;
-    }
-  });
-
-  // ── Form submits ──────────────────────────────────────────
-  document.addEventListener('submit', function(e) {
-    e.preventDefault();
-    switch(e.target.id) {
-      case 'store-info-form': saveStoreSettings(e); break;
-      case 'profile-form':    updateProfile(e); break;
-      case 'change-pw-form':  changePassword(e); break;
-    }
-  });
-
-  // ── Keyboard ──────────────────────────────────────────────
-  document.addEventListener('keydown', function(e) {
+  /* ── Keyboard: Escape closes modals ── */
+  document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
-      const o = document.querySelector('.modal-overlay.open');
-      if (o) closeModal(o.id);
-    }
-    if (e.key === 'Enter' && e.target.id === 'global-search') {
-      doGlobalSearch(e.target.value.trim());
+      const open = document.querySelector('.modal-overlay.open');
+      if (open) closeModal(open.id);
     }
   });
+});
 
-})();
-
-// Keep initAppListeners as no-op for compatibility
-function initAppListeners() {}
-
-// Make navigateTo available globally
+// ──────────────────────────────────────────────────────────────
+//  Make navigateTo available globally (used in inline onclick)
+// ──────────────────────────────────────────────────────────────
 window.navigateTo = navigateTo;
-
-// Global sign out
-window.signOut = async function() {
-  stopListeners();
-  await auth.signOut();
-  if (typeof showLogin === 'function') showLogin();
-};
