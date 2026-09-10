@@ -703,7 +703,7 @@ const OTP_SERVER_URL = 'https://snc-otp-server.onrender.com';
 
 async function sendOTPEmail(toEmail, code) {
   showAlert(
-    `<i class="fa fa-paper-plane"></i> Sending OTP to <strong>${toEmail}</strong>…`,
+    `<i class="fa fa-paper-plane"></i> Sending OTP to <strong>${toEmail}</strong>… Please wait.`,
     'info'
   );
 
@@ -725,16 +725,10 @@ async function sendOTPEmail(toEmail, code) {
       throw new Error(data.error || 'Send failed');
     }
   } catch (err) {
-    console.error('[OTP Server] Failed:', err.message);
-    // Show OTP on screen as fallback
+    console.error('[OTP Server]', err.message);
     showAlert(
-      `<div style="line-height:2;">
-         <strong>Your OTP Code:</strong><br>
-         <span style="font-size:2rem;letter-spacing:.35em;font-family:monospace;
-               color:#0284c7;font-weight:800;">${code}</span><br>
-         <small>Valid for 5 minutes.</small>
-       </div>`,
-      'info'
+      `<i class="fa fa-triangle-exclamation"></i> Could not send email. Please try again.`,
+      'error'
     );
   }
 }
