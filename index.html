@@ -661,7 +661,7 @@ $('login-form').addEventListener('submit', async e=>{
   setLoading('login-btn',true,'');
   const timeout=setTimeout(()=>{
     otpFlowActive=false;
-    setLoading('login-btn',false,'<i class="fa fa-arrow-right"></i> Continue');
+    setLoading('login-btn',false,'&#x276F; Continue');
     showAuthAlert('Connection timed out. Check your internet and try again.');
   },15000);
   try {
@@ -683,7 +683,7 @@ $('login-form').addEventListener('submit', async e=>{
       const map={'auth/user-not-found':'No account found.','auth/wrong-password':'Incorrect password.','auth/invalid-credential':'Incorrect email or password.','auth/network-request-failed':'Network error. Check your connection.'};
       showAuthAlert(map[err.code]||`Error: ${err.message}`);
     }
-  } finally { setLoading('login-btn',false,'<i class="fa fa-arrow-right"></i> Continue'); }
+  } finally { setLoading('login-btn',false,'&#x276F; Continue'); }
 });
 
 // ══ STEP 2 — Verify OTP ══
@@ -715,7 +715,7 @@ async function verifyOTP(){
   } catch(err){
     otpFlowActive=false;
     showAuthAlert('Re-auth failed. Please log in again.');
-    setLoading('btn-verify-otp',false,'<i class="fa fa-shield-halved"></i> Verify & Sign In');
+    setLoading('btn-verify-otp',false,'✔ Verify & Sign In');
     setStep(1); showAuthPanel('panel-login');
   }
 }

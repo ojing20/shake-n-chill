@@ -91,6 +91,7 @@ const PAGE_TITLES = {
 };
 
 function navigateTo(page) {
+  console.log('[navigateTo] page:', page, 'user:', state.user?.email);
   // Hide all sections
   document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => {
@@ -1446,7 +1447,11 @@ function doGlobalSearch(query) {
 
     // Nav items
     const navBtn = e.target.closest('.nav-item[data-page]');
-    if (navBtn) { navigateTo(navBtn.dataset.page); return; }
+    if (navBtn) {
+      console.log('[NAV] clicked:', navBtn.dataset.page);
+      navigateTo(navBtn.dataset.page);
+      return;
+    }
 
     // Tab buttons
     const tabBtn = e.target.closest('.tab-btn[data-tab]');
