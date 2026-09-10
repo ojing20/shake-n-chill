@@ -706,26 +706,55 @@ async function sendOTPEmail(toEmail, code) {
   );
 
   try {
-    const result = await emailjs.send(
-      EMAILJS_SERVICE_ID,
-      EMAILJS_TEMPLATE_ID,
-      {
-        email:    toEmail,
-        passcode: code,
-        time:     '5 minutes'
-      }
-    );
-    console.log('[EmailJS] Sent OK:', result.status);
-    showAlert(
-      `<i class="fa fa-circle-check"></i> OTP sent to <strong>${toEmail}</strong>. Check your inbox & spam folder.`,
-      'success'
-    );
+    // Use fetch directly with accessToken to bypass domain restrictions
+    const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'origin': 'https://ojing20.github.io'
+      },
+      body: JSON.stringify({
+        service_id:   EMAILJS_SERVICE_ID,
+        template_id:  EMAILJS_TEMPLATE_ID,
+        user_id:      EMAILJS_PUBLIC_KEY,
+        accessToken:  EMAILJS_PRIVATE_KEY,
+        template_params: {
+          email:    toEmail,
+          passcode: code,
+          time:     '5 minutes'
+        }
+      })
+    });
+
+    if (res.ok || res.status === 200) {
+      console.log('[EmailJS] Sent OK');
+      showAlert(
+        `<i class="fa fa-circle-check"></i> OTP sent to <strong>${toEmail}</strong>. Check your inbox & spam folder.`,
+        'success'
+      );
+    } else {
+      const txt = await res.text();
+      console.error('[EmailJS] HTTP Error:', res.status, txt);
+      throw new Error(txt);
+    }
   } catch (err) {
-    console.error('[EmailJS] Failed:', JSON.stringify(err));
-    showAlert(
-      `<i class="fa fa-triangle-exclamation"></i> Could not send email. Please try again.`,
-      'error'
-    );
+    console.error('[EmailJS] Failed:', err.message || err);
+    // Fallback to emailjs.send()
+    try {
+      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+        email: toEmail, passcode: code, time: '5 minutes'
+      });
+      showAlert(
+        `<i class="fa fa-circle-check"></i> OTP sent to <strong>${toEmail}</strong>. Check inbox & spam.`,
+        'success'
+      );
+    } catch(err2) {
+      console.error('[EmailJS] Fallback failed:', err2);
+      showAlert(
+        `<i class="fa fa-triangle-exclamation"></i> Could not send email. Please try again.`,
+        'error'
+      );
+    }
   }
 }
 
