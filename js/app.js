@@ -1436,66 +1436,94 @@ function doGlobalSearch(query) {
 }
 
 // ──────────────────────────────────────────────────────────────
-//  13.  EVENT LISTENERS — using event delegation
+//  13.  EVENT LISTENERS — single delegation on document
 // ──────────────────────────────────────────────────────────────
-let listenersInitialized = false;
+// Attach once at script load — no need to wait for auth
+(function attachListeners() {
 
-function initAppListeners() {
-  if (listenersInitialized) return;
-  listenersInitialized = true;
+  // ── Click delegation ──────────────────────────────────────
+  document.addEventListener('click', function(e) {
 
-  // ── Event delegation on document ──────────────────────────
-  document.addEventListener('click', e => {
-    const t = e.target.closest('[data-page]');
-    if (t && t.classList.contains('nav-item')) { navigateTo(t.dataset.page); return; }
+    // Nav items
+    const navBtn = e.target.closest('.nav-item[data-page]');
+    if (navBtn) { navigateTo(navBtn.dataset.page); return; }
 
-    const id = e.target.closest('[id]')?.id || e.target.id;
-    switch(id) {
-      case 'btn-menu-toggle':    openSidebar(); break;
-      case 'sidebar-overlay':    closeSidebar(); break;
-      case 'btn-logout':         signOut(); break;
-      case 'btn-refresh':        { const a=document.querySelector('.nav-item.active'); if(a)navigateTo(a.dataset.page); toast('Data refreshed.','info',2000); break; }
-      case 'btn-quick-add-product': openProductModal(); break;
-      case 'btn-add-product':    openProductModal(); break;
-      case 'btn-save-product':   saveProduct(); break;
-      case 'btn-add-category':   openCategoryModal(); break;
-      case 'btn-save-category':  saveCategory(); break;
-      case 'btn-export-inv':     exportInventory(); break;
-      case 'btn-stock-in':       openStockModal('stock_in'); break;
-      case 'btn-stock-out':      openStockModal('stock_out'); break;
-      case 'btn-adjust-stock':   openStockModal('adjustment'); break;
-      case 'btn-save-txn':       saveStockTransaction(); break;
-      case 'btn-add-supplier':   openSupplierModal(); break;
-      case 'btn-save-supplier':  saveSupplier(); break;
-      case 'btn-print-report':   printReport(); break;
-      case 'btn-apply-dates':    renderReportSummary(); break;
-      case 'btn-invite-user':    openModal('modal-invite-user'); break;
-      case 'btn-save-invite':    inviteUser(); break;
-      case 'btn-verify-email':   state.user?.sendEmailVerification().then(()=>toast('Verification email sent.','info')).catch(err=>toast(err.message,'error')); break;
-      case 'btn-revoke-session': signOut(); break;
-      case 'btn-confirm-delete': if(state.confirmCallback){state.confirmCallback();state.confirmCallback=null;} break;
+    // Tab buttons
+    const tabBtn = e.target.closest('.tab-btn[data-tab]');
+    if (tabBtn) {
+      const tabName = tabBtn.dataset.tab;
+      tabBtn.closest('.tabs').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      tabBtn.classList.add('active');
+      const parent = tabBtn.closest('.page-section') || document;
+      parent.querySelectorAll('.tab-panel').forEach(p => {
+        p.style.display = p.id === `tab-${tabName}` ? 'block' : 'none';
+      });
+      if (tabName==='lowstock')      renderLowStockTable();
+      if (tabName==='rep-valuation') renderValuationTable();
+      if (tabName==='rep-movement')  renderMovementTable();
+      if (tabName==='rep-lowstock')  renderRepLowStockTable();
+      if (tabName==='set-users')     loadUsersList();
+      if (tabName==='set-profile')   loadSettingsPage();
+      return;
     }
 
-    // Close modal buttons
+    // Close modal
     const closeBtn = e.target.closest('[data-close]');
     if (closeBtn) { closeModal(closeBtn.dataset.close); return; }
 
-    // Modal overlay click
-    if (e.target.classList.contains('modal-overlay')) { closeModal(e.target.id); return; }
-  });
+    // Modal overlay background
+    if (e.target.classList && e.target.classList.contains('modal-overlay')) {
+      closeModal(e.target.id); return;
+    }
 
-  // ── Input / change events ─────────────────────────────────
-  document.addEventListener('input', e => {
-    switch(e.target.id) {
-      case 'inv-search':       renderInventoryTable(); break;
-      case 'cat-search':       renderCategoryCards(); break;
-      case 'txn-search':       renderTransactionTable(); break;
-      case 'sup-search':       renderSuppliersTable(); break;
-      case 'global-search':    break;
+    // Buttons by ID — find nearest button with an id
+    const btn = e.target.closest('button[id], a[id]');
+    if (!btn) return;
+    const id = btn.id;
+
+    switch(id) {
+      case 'btn-menu-toggle':       openSidebar(); break;
+      case 'btn-logout':            signOut(); break;
+      case 'btn-refresh':           { const a=document.querySelector('.nav-item.active'); if(a)navigateTo(a.dataset.page); toast('Data refreshed.','info',2000); break; }
+      case 'btn-quick-add-product': openProductModal(); break;
+      case 'btn-add-product':       openProductModal(); break;
+      case 'btn-save-product':      saveProduct(); break;
+      case 'btn-add-category':      openCategoryModal(); break;
+      case 'btn-save-category':     saveCategory(); break;
+      case 'btn-export-inv':        exportInventory(); break;
+      case 'btn-stock-in':          openStockModal('stock_in'); break;
+      case 'btn-stock-out':         openStockModal('stock_out'); break;
+      case 'btn-adjust-stock':      openStockModal('adjustment'); break;
+      case 'btn-save-txn':          saveStockTransaction(); break;
+      case 'btn-add-supplier':      openSupplierModal(); break;
+      case 'btn-save-supplier':     saveSupplier(); break;
+      case 'btn-print-report':      printReport(); break;
+      case 'btn-apply-dates':       renderReportSummary(); break;
+      case 'btn-invite-user':       openModal('modal-invite-user'); break;
+      case 'btn-save-invite':       inviteUser(); break;
+      case 'btn-verify-email':      state.user?.sendEmailVerification().then(()=>toast('Verification sent!','info')).catch(err=>toast(err.message,'error')); break;
+      case 'btn-revoke-session':    signOut(); break;
+      case 'btn-confirm-delete':    if(state.confirmCallback){state.confirmCallback();state.confirmCallback=null;} break;
     }
   });
 
-  document.addEventListener('change', e => {
+  // ── Sidebar overlay click ─────────────────────────────────
+  document.addEventListener('click', function(e) {
+    if (e.target && e.target.id === 'sidebar-overlay') closeSidebar();
+  });
+
+  // ── Input events ─────────────────────────────────────────
+  document.addEventListener('input', function(e) {
+    switch(e.target.id) {
+      case 'inv-search':  renderInventoryTable(); break;
+      case 'cat-search':  renderCategoryCards();  break;
+      case 'txn-search':  renderTransactionTable(); break;
+      case 'sup-search':  renderSuppliersTable(); break;
+    }
+  });
+
+  // ── Change events ─────────────────────────────────────────
+  document.addEventListener('change', function(e) {
     switch(e.target.id) {
       case 'inv-filter-category': renderInventoryTable(); break;
       case 'inv-filter-status':   renderInventoryTable(); break;
@@ -1507,7 +1535,7 @@ function initAppListeners() {
   });
 
   // ── Form submits ──────────────────────────────────────────
-  document.addEventListener('submit', e => {
+  document.addEventListener('submit', function(e) {
     e.preventDefault();
     switch(e.target.id) {
       case 'store-info-form': saveStoreSettings(e); break;
@@ -1516,35 +1544,26 @@ function initAppListeners() {
     }
   });
 
-  // ── Global search Enter ───────────────────────────────────
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { const o=document.querySelector('.modal-overlay.open'); if(o)closeModal(o.id); }
-    if (e.key === 'Enter' && e.target.id === 'global-search') doGlobalSearch(e.target.value.trim());
+  // ── Keyboard ──────────────────────────────────────────────
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      const o = document.querySelector('.modal-overlay.open');
+      if (o) closeModal(o.id);
+    }
+    if (e.key === 'Enter' && e.target.id === 'global-search') {
+      doGlobalSearch(e.target.value.trim());
+    }
   });
 
-  // ── Tabs ──────────────────────────────────────────────────
-  document.addEventListener('click', e => {
-    const tabBtn = e.target.closest('.tab-btn');
-    if (!tabBtn) return;
-    const tabName = tabBtn.dataset.tab;
-    if (!tabName) return;
-    tabBtn.closest('.tabs').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    tabBtn.classList.add('active');
-    const parent = tabBtn.closest('.page-section') || document;
-    parent.querySelectorAll('.tab-panel').forEach(p => { p.style.display = p.id===`tab-${tabName}`?'block':'none'; });
-    if (tabName==='lowstock')      renderLowStockTable();
-    if (tabName==='rep-valuation') renderValuationTable();
-    if (tabName==='rep-movement')  renderMovementTable();
-    if (tabName==='rep-lowstock')  renderRepLowStockTable();
-    if (tabName==='set-users')     loadUsersList();
-    if (tabName==='set-profile')   loadSettingsPage();
-  });
-}
+})();
 
-// Make navigateTo available globally (used in inline onclick)
+// Keep initAppListeners as no-op for compatibility
+function initAppListeners() {}
+
+// Make navigateTo available globally
 window.navigateTo = navigateTo;
 
-// Global sign out function
+// Global sign out
 window.signOut = async function() {
   stopListeners();
   await auth.signOut();
