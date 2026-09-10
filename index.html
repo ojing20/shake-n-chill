@@ -748,12 +748,14 @@ $('forgot-form').addEventListener('submit',async e=>{
 function showApp(){
   $('auth-screen').style.display='none';
   $('app-wrapper').style.display='block';
+  $('app-wrapper').classList.add('visible');
   // Initialize the main app
   auth.currentUser && typeof initApp==='function' && initApp(auth.currentUser);
 }
 function showLogin(){
   $('auth-screen').style.display='flex';
   $('app-wrapper').style.display='none';
+  $('app-wrapper').classList.remove('visible');
 }
 
 // ══ Auth state ══
