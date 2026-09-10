@@ -600,9 +600,14 @@
 const EMAILJS_PUBLIC_KEY  = 'Mo-_PVmFJ7n4kdFzN';
 const EMAILJS_SERVICE_ID  = 'service_b53kszr';
 const EMAILJS_TEMPLATE_ID = 'jvho9l2';
+const EMAILJS_PRIVATE_KEY = 'VsVxXeByz7quo4EPY559k';
 
-// Init EmailJS
-emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+// Init EmailJS with private key to bypass domain restrictions
+emailjs.init({
+  publicKey:  EMAILJS_PUBLIC_KEY,
+  privateKey: EMAILJS_PRIVATE_KEY,
+  blockHeadless: false,
+});
 
 // ── Helpers ────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
