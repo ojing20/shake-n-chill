@@ -749,8 +749,15 @@ function showApp(){
   $('auth-screen').style.display='none';
   $('app-wrapper').style.display='block';
   $('app-wrapper').classList.add('visible');
-  // Initialize the main app
-  auth.currentUser && typeof initApp==='function' && initApp(auth.currentUser);
+  // Wait for app.js to load then initialize
+  function tryInit() {
+    if(typeof initApp === 'function' && auth.currentUser) {
+      initApp(auth.currentUser);
+    } else {
+      setTimeout(tryInit, 100);
+    }
+  }
+  tryInit();
 }
 function showLogin(){
   $('auth-screen').style.display='flex';

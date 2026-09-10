@@ -127,10 +127,11 @@ function openSidebar()  { $('sidebar').classList.add('open'); $('sidebar-overlay
 function closeSidebar() { $('sidebar').classList.remove('open'); $('sidebar-overlay').classList.remove('open'); }
 
 // ──────────────────────────────────────────────────────────────
-//  1.  AUTH & BOOT — called from index.html after OTP verified
+//  1.  AUTH & BOOT
 // ──────────────────────────────────────────────────────────────
 async function initApp(user) {
   if (!user) return;
+  if (state.user && state.user.uid === user.uid) return; // already initialized
   state.user = user;
 
   // Load user profile from Firestore
