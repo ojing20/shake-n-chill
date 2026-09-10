@@ -695,18 +695,12 @@ function clearOTP() { localStorage.removeItem('snc_otp'); }
 
 // ── Send OTP via EmailJS ────────────────────────────────────────
 async function sendOTPEmail(toEmail, code) {
-  // ALWAYS show OTP on screen first so login never gets blocked
+  // Show sending indicator only — NO code on screen
   showAlert(
-    `<div style="line-height:2;">
-       <strong>Your One-Time Password:</strong><br>
-       <span style="font-size:2rem;letter-spacing:.35em;font-family:monospace;
-             color:#0284c7;font-weight:800;display:block;margin:.25rem 0;">${code}</span>
-       <small style="color:#075985;">Valid for 5 minutes. Also sending to your email…</small>
-     </div>`,
+    `<i class="fa fa-paper-plane"></i> Sending OTP to <strong>${toEmail}</strong>… Check your inbox.`,
     'info'
   );
 
-  // Try to send email in background (non-blocking)
   try {
     const result = await emailjs.send(
       EMAILJS_SERVICE_ID,
@@ -718,28 +712,17 @@ async function sendOTPEmail(toEmail, code) {
       }
     );
     console.log('[EmailJS] Sent OK:', result.status);
-    // Update alert to confirm email sent
+    // Confirm sent — still NO code shown
     showAlert(
-      `<div style="line-height:2;">
-         <i class="fa fa-paper-plane"></i>
-         <strong> OTP sent to ${toEmail}</strong><br>
-         <span style="font-size:1.6rem;letter-spacing:.3em;font-family:monospace;
-               color:#0284c7;font-weight:800;">${code}</span><br>
-         <small style="color:#075985;">Check inbox &amp; spam. Valid 5 minutes.</small>
-       </div>`,
+      `<i class="fa fa-circle-check"></i> OTP sent to <strong>${toEmail}</strong>. Check your inbox & spam folder.`,
       'success'
     );
   } catch (err) {
     console.error('[EmailJS] Failed:', JSON.stringify(err));
-    // Keep showing OTP on screen — user can still log in
+    // Email failed — show code as fallback only
     showAlert(
-      `<div style="line-height:2;">
-         <strong>⚠️ Email failed — use this code:</strong><br>
-         <span style="font-size:2rem;letter-spacing:.35em;font-family:monospace;
-               color:#0284c7;font-weight:800;display:block;margin:.25rem 0;">${code}</span>
-         <small style="color:#075985;">Valid for 5 minutes.</small>
-       </div>`,
-      'info'
+      `<i class="fa fa-triangle-exclamation"></i> Could not send email. Please try again or contact admin.`,
+      'error'
     );
   }
 }
