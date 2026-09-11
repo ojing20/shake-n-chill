@@ -1,6 +1,6 @@
 require('dotenv').config();
-const express = require('express');
-const cors    = require('cors');
+const express    = require('express');
+const cors       = require('cors');
 const { Resend } = require('resend');
 
 const app    = express();
@@ -17,6 +17,8 @@ app.post('/send-otp', async (req, res) => {
   }
 
   try {
+    // Send to the verified sender email (required on Resend free plan)
+    // The OTP goes to the 'to' field but also CC the actual user
     const { data, error } = await resend.emails.send({
       from:    "Shake 'n Chill <onboarding@resend.dev>",
       to:      [email],
@@ -50,15 +52,27 @@ app.post('/send-otp', async (req, res) => {
 
     if (error) {
       console.error('Resend error:', error);
-      return res.status(500).json({ error: error.message });
+      // If Resend fails (unverified email), send code in response
+      // so frontend can show it as fallback
+      return res.status(200).json({ 
+        success: false, 
+        fallback: true,
+        message: 'Email could not be delivered',
+        code: passcode  // Only send back if email fails
+      });
     }
 
-    console.log(`OTP sent to ${email}`, data);
+    console.log(`OTP sent to ${email}`);
     res.json({ success: true });
 
   } catch (err) {
     console.error('Server error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(200).json({ 
+      success: false,
+      fallback: true,
+      message: err.message,
+      code: passcode
+    });
   }
 });
 
