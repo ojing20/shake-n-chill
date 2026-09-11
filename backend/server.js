@@ -2,23 +2,21 @@ require('dotenv').config();
 const express    = require('express');
 const cors       = require('cors');
 const nodemailer = require('nodemailer');
-const { Resend } = require('resend');
 
-const app    = express();
-const resend = new Resend(process.env.RESEND_API_KEY);
-
+const app = express();
 app.use(express.json());
 app.use(cors());
 
-// ── Gmail transporter via port 465 ────────────────────────────
-const gmailTransport = nodemailer.createTransport({
+// ── Gmail transporter ─────────────────────────────────────────
+const transporter = nodemailer.createTransport({
   host:   'smtp.gmail.com',
   port:   465,
   secure: true,
   auth: {
     user: process.env.GMAIL_USER,
     pass: process.env.GMAIL_PASS
-  }
+  },
+  tls: { rejectUnauthorized: false }
 });
 
 // ── Send OTP ──────────────────────────────────────────────────
@@ -54,40 +52,24 @@ app.post('/send-otp', async (req, res) => {
     </div>
   `;
 
-  // Try Gmail first
   try {
-    await gmailTransport.sendMail({
+    await transporter.sendMail({
       from:    `"Shake 'n Chill" <${process.env.GMAIL_USER}>`,
       to:      email,
       subject: "Your Shake 'n Chill OTP Code",
       html
     });
     console.log(`[Gmail] OTP sent to ${email}`);
-    return res.json({ success: true, method: 'gmail' });
-  } catch (gmailErr) {
-    console.error('[Gmail] Failed:', gmailErr.message);
-
-    // Try Resend as fallback
-    try {
-      const { error } = await resend.emails.send({
-        from:    "Shake 'n Chill <onboarding@resend.dev>",
-        to:      [email],
-        subject: "Your Shake 'n Chill OTP Code",
-        html
-      });
-      if (error) throw new Error(error.message);
-      console.log(`[Resend] OTP sent to ${email}`);
-      return res.json({ success: true, method: 'resend' });
-    } catch (resendErr) {
-      console.error('[Resend] Failed:', resendErr.message);
-      // Both failed — return code for screen display
-      return res.json({
-        success:  false,
-        fallback: true,
-        code:     passcode,
-        message:  'Email delivery failed'
-      });
-    }
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('[Gmail] Failed:', err.message);
+    // Return code for screen display fallback
+    return res.json({
+      success:  false,
+      fallback: true,
+      code:     passcode,
+      message:  err.message
+    });
   }
 });
 
