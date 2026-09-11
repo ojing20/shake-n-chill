@@ -716,19 +716,39 @@ async function sendOTPEmail(toEmail, code) {
 
     const data = await res.json();
 
-    if (res.ok && data.success) {
+    if (data.success) {
+      // Email sent successfully
       showAlert(
         `<i class="fa fa-circle-check"></i> OTP sent to <strong>${toEmail}</strong>. Check your inbox & spam folder.`,
         'success'
       );
+    } else if (data.fallback && data.code) {
+      // Email failed — show OTP on screen
+      showAlert(
+        `<div style="line-height:2;">
+           <strong>Your OTP Code:</strong><br>
+           <span style="font-size:2rem;letter-spacing:.35em;font-family:monospace;
+                 color:#0284c7;font-weight:800;">${data.code}</span><br>
+           <small>Valid for 5 minutes.</small>
+         </div>`,
+        'info'
+      );
+      // Update the stored OTP with the server's code
+      saveOTP(toEmail, data.code);
     } else {
       throw new Error(data.error || 'Send failed');
     }
   } catch (err) {
     console.error('[OTP Server]', err.message);
+    // Show OTP on screen as last resort fallback
     showAlert(
-      `<i class="fa fa-triangle-exclamation"></i> Could not send email. Please try again.`,
-      'error'
+      `<div style="line-height:2;">
+         <strong>Your OTP Code:</strong><br>
+         <span style="font-size:2rem;letter-spacing:.35em;font-family:monospace;
+               color:#0284c7;font-weight:800;">${code}</span><br>
+         <small>Valid for 5 minutes.</small>
+       </div>`,
+      'info'
     );
   }
 }
