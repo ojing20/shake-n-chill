@@ -716,37 +716,24 @@ async function sendOTPEmail(toEmail, code) {
 
     const data = await res.json();
 
-    if (data.success) {
-      // Email sent successfully
+    if (res.ok && data.success) {
+      // Email sent successfully — no code on screen
       showAlert(
         `<i class="fa fa-circle-check"></i> OTP sent to <strong>${toEmail}</strong>. Check your inbox & spam folder.`,
         'success'
       );
-    } else if (data.fallback && data.code) {
-      // Email failed — show OTP on screen
-      showAlert(
-        `<div style="line-height:2;">
-           <strong>Your OTP Code:</strong><br>
-           <span style="font-size:2rem;letter-spacing:.35em;font-family:monospace;
-                 color:#0284c7;font-weight:800;">${data.code}</span><br>
-           <small>Valid for 5 minutes.</small>
-         </div>`,
-        'info'
-      );
-      // Update the stored OTP with the server's code
-      saveOTP(toEmail, data.code);
     } else {
       throw new Error(data.error || 'Send failed');
     }
   } catch (err) {
     console.error('[OTP Server]', err.message);
-    // Show OTP on screen as last resort fallback
+    // Email failed — show code on screen as fallback
     showAlert(
       `<div style="line-height:2;">
-         <strong>Your OTP Code:</strong><br>
+         <strong>⚠️ Could not send email. Use this code:</strong><br>
          <span style="font-size:2rem;letter-spacing:.35em;font-family:monospace;
-               color:#0284c7;font-weight:800;">${code}</span><br>
-         <small>Valid for 5 minutes.</small>
+               color:#0284c7;font-weight:800;display:block;margin:.25rem 0;">${code}</span>
+         <small style="color:#075985;">Valid for 5 minutes.</small>
        </div>`,
       'info'
     );
